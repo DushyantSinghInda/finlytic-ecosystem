@@ -1,0 +1,18 @@
+{
+    "name": "finlytic-ecosystem",
+    "version": "0.0.0",
+    "private": true,
+    "workspaces": [
+        "services/*",
+        "packages/*"
+    ],
+    "scripts": {
+        "infra:up": "docker compose up -d",
+        "infra:down": "docker compose down",
+        "infra:reset": "docker compose down -v",
+        "infra:logs": "docker compose logs -f"
+    },
+    "engines": {
+        "node": ">=24"
+    }
+}

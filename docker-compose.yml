@@ -1,0 +1,55 @@
+services:
+  postgres-users:
+    image: postgres:17-alpine
+    container_name: finlytic-postgres-users
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: users_svc
+      POSTGRES_PASSWORD: users_dev_pass
+      POSTGRES_DB: users_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-users-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U users_svc -d users_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgres-email:
+    image: postgres:17-alpine
+    container_name: finlytic-postgres-email
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: email_svc
+      POSTGRES_PASSWORD: email_dev_pass
+      POSTGRES_DB: email_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-email-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U email_svc -d email_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: finlytic-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-users-data:
+  postgres-email-data:
+  redis-data:
