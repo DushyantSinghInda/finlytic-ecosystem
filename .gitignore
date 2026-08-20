@@ -5,6 +5,7 @@ node_modules/
 dist/
 build/
 *.tsbuildinfo
+**/src/generated/
 
 # environment & secrets
 .env
@@ -19,8 +20,10 @@ npm-debug.log*
 
 # editors / OS
 .idea/
+.vscode/
 .DS_Store
 Thumbs.db
 
 # test
 coverage/
+**/scratch/
