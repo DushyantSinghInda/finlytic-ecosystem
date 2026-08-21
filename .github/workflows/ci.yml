@@ -24,6 +24,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Verify native modules load
+        run: node -e "const a=require('argon2'); a.hash('probe').then(h=>console.log('argon2 ok:', h.slice(0,20)))"
+
       - name: Generate Prisma clients
         run: npm run prisma:generate:all
 

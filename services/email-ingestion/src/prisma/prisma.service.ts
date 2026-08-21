@@ -26,11 +26,11 @@ export class PrismaService
 
 	async onModuleInit(): Promise<void> {
 		await this.$connect();
-		this.logger.log('Connected to email_ingestion_db');
+		this.logger.log('Connected to email_db');
 	}
 
 	async onModuleDestroy(): Promise<void> {
 		await this.$disconnect();
-		this.logger.log('Disconnected from email_ingestion_db');
+		this.logger.log('Disconnected from email_db');
 	}
 }

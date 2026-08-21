@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { UsersService } from '../users/users.service';
 import { TokenService } from './token.service';
 import { LoginDto } from './dto/login.dto';
@@ -77,13 +77,24 @@ export class AuthService implements OnModuleInit {
 
 		// Always run one argon2 verification, even when no user exists,
 		// so the response time cannot reveal whether the email is registered.
-		const passwordMatches = await argon2.verify(
-			user?.passwordHash ?? this.decoyHash,
-			dto.password,
-		);
+		let passwordMatches = false;
+
+		try {
+			passwordMatches = await argon2.verify(
+				user?.passwordHash ?? this.decoyHash,
+				dto.password,
+			);
+		} catch {
+			passwordMatches = false;
+		}
 
 		if (!user || !passwordMatches || !user.isActive) {
-			this.logger.warn(`Failed login attempt for ${dto.email}`);
+			const emailFingerprint = createHash('sha256')
+				.update(dto.email)
+				.digest('hex')
+				.slice(0, 12);
+
+			this.logger.warn(`Failed login attempt [${emailFingerprint}]`);
 			throw new UnauthorizedException('Invalid email or password');
 		}
 

@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
@@ -19,7 +19,9 @@ async function bootstrap() {
 	);
 
 	await app.listen(port);
-	console.log(`email-ingestion listening on http://localhost:${port}`);
+	new Logger('Bootstrap').log(
+		`email-ingestion listening on http://localhost:${port}`,
+	);
 }
 
 void bootstrap();
