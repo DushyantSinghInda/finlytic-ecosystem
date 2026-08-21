@@ -8,7 +8,7 @@
 	],
 	"scripts": {
 		"build:auth-lib": "npm run build -w packages/auth-lib",
-		"build:all": "npm run build:auth-lib && npm run build -w services/user-management",
+		"build:all": "npm run build:auth-lib && npm run build -w services/user-management && npm run build -w services/email-ingestion",
 		"infra:up": "docker compose up -d",
 		"infra:down": "docker compose down",
 		"infra:reset": "docker compose down -v",
