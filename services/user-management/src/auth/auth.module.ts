@@ -7,10 +7,14 @@ import { ConfigService } from '@nestjs/config';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { TokenService } from './token.service';
+import { RefreshTokenService } from './refresh-token.service';
+import { PrismaModule } from '../prisma/prisma.module';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Module({
   imports: [
     UsersModule,
+    PrismaModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService): JwtModuleOptions => ({
@@ -37,6 +41,6 @@ import { TokenService } from './token.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, TokenService],
+  providers: [AuthService, TokenService, RefreshTokenService, JwtAuthGuard],
 })
 export class AuthModule {}

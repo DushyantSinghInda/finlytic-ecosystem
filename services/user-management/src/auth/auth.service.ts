@@ -13,7 +13,10 @@ import { TokenService } from './token.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { Prisma } from '../generated/prisma/client';
-import type { User, UserRole } from '../generated/prisma/client';
+import type { User } from '../generated/prisma/client';
+import { RefreshTokenService, type ClientMeta } from './refresh-token.service';
+import { RefreshDto } from './dto/refresh.dto';
+import { type PublicUser, toPublicUser } from '../users/user.mapper';
 
 const ARGON2_OPTIONS: argon2.HashOptions = {
   type: argon2.argon2id,
@@ -22,16 +25,9 @@ const ARGON2_OPTIONS: argon2.HashOptions = {
   parallelism: 1,
 };
 
-export interface PublicUser {
-  id: string;
-  email: string;
-  role: UserRole;
-  isActive: boolean;
-  createdAt: Date;
-}
-
 export interface LoginResponse {
   accessToken: string;
+  refreshToken: string;
   tokenType: 'Bearer';
   expiresIn: number;
   user: PublicUser;
@@ -46,6 +42,7 @@ export class AuthService implements OnModuleInit {
     private readonly usersService: UsersService,
     private readonly tokenService: TokenService,
     private readonly configService: ConfigService,
+    private readonly refreshTokenService: RefreshTokenService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -61,7 +58,7 @@ export class AuthService implements OnModuleInit {
     try {
       const user = await this.usersService.create(dto.email, passwordHash);
       this.logger.log(`Registered user ${user.id}`);
-      return this.toPublicUser(user);
+      return toPublicUser(user);
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -75,7 +72,7 @@ export class AuthService implements OnModuleInit {
     }
   }
 
-  async login(dto: LoginDto): Promise<LoginResponse> {
+  async login(dto: LoginDto, meta: ClientMeta): Promise<LoginResponse> {
     const user = await this.usersService.findByEmail(dto.email);
 
     // Always run one argon2 verification, even when no user exists,
@@ -90,26 +87,65 @@ export class AuthService implements OnModuleInit {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const accessToken = await this.tokenService.issueAccessToken(user);
+    const { raw: refreshToken } = await this.refreshTokenService.startFamily(
+      user.id,
+      meta,
+    );
     this.logger.log(`User ${user.id} logged in`);
 
+    return this.buildSession(user, refreshToken);
+  }
+
+  async refresh(dto: RefreshDto, meta: ClientMeta): Promise<LoginResponse> {
+    const spent = await this.refreshTokenService.spend(dto.refreshToken);
+
+    if (!spent) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const user = await this.usersService.findById(spent.userId);
+
+    if (!user || !user.isActive) {
+      await this.refreshTokenService.revokeFamily(spent.familyId);
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const issued = await this.refreshTokenService.issue(
+      user.id,
+      spent.familyId,
+      meta,
+    );
+    await this.refreshTokenService.linkReplacement(spent.id, issued.record.id);
+
+    return this.buildSession(user, issued.raw);
+  }
+
+  private async buildSession(
+    user: User,
+    refreshToken: string,
+  ): Promise<LoginResponse> {
     return {
-      accessToken,
+      accessToken: await this.tokenService.issueAccessToken(user),
+      refreshToken,
       tokenType: 'Bearer',
       expiresIn: this.configService.get<number>(
         'JWT_ACCESS_TOKEN_TTL_SECONDS',
       )!,
-      user: this.toPublicUser(user),
+      user: toPublicUser(user),
     };
   }
 
-  private toPublicUser(user: User): PublicUser {
-    return {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      isActive: user.isActive,
-      createdAt: user.createdAt,
-    };
+  async logout(dto: RefreshDto): Promise<void> {
+    await this.refreshTokenService.revokeFamilyByToken(dto.refreshToken);
+  }
+
+  async getProfile(userId: string): Promise<PublicUser> {
+    const user = await this.usersService.findById(userId);
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException();
+    }
+
+    return toPublicUser(user);
   }
 }
