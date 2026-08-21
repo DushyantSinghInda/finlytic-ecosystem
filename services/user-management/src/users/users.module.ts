@@ -19,11 +19,11 @@ import { UsersController } from './users.controller';
 				),
 				issuer: config.get<string>('JWT_ISSUER')!,
 				audience: config.get<string>('JWT_AUDIENCE')!,
-			})
-		})
+			}),
+		}),
 	],
 	controllers: [UsersController],
 	providers: [UsersService],
 	exports: [UsersService],
 })
-export class UsersModule { }
+export class UsersModule {}

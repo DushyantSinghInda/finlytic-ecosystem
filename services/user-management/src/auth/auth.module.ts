@@ -42,4 +42,4 @@ import { PrismaModule } from '../prisma/prisma.module';
 	controllers: [AuthController],
 	providers: [AuthService, TokenService, RefreshTokenService],
 })
-export class AuthModule { }
+export class AuthModule {}

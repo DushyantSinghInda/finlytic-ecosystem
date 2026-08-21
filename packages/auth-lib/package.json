@@ -9,7 +9,9 @@
 	],
 	"scripts": {
 		"build": "tsc -p tsconfig.json",
-		"build:watch": "tsc -p tsconfig.json --watch"
+		"build:watch": "tsc -p tsconfig.json --watch",
+		"lint": "eslint \"src/**/*.ts\" --fix",
+		"lint:ci": "eslint \"src/**/*.ts\""
 	},
 	"peerDependencies": {
 		"@nestjs/common": "^11.0.0",
@@ -23,6 +25,13 @@
 		"@types/node": "^24.0.0",
 		"reflect-metadata": "^0.2.2",
 		"rxjs": "^7.8.1",
-		"typescript": "^5.7.3"
+		"typescript": "^5.7.3",
+		"@eslint/js": "^9.18.0",
+		"eslint": "^9.18.0",
+		"eslint-config-prettier": "^10.0.1",
+		"eslint-plugin-prettier": "^5.2.2",
+		"globals": "^17.0.0",
+		"prettier": "^3.4.2",
+		"typescript-eslint": "^8.20.0"
 	}
 }

@@ -9,7 +9,7 @@ import type { PublicUser } from './user.mapper';
 
 @Controller('users')
 export class UsersController {
-	constructor(private readonly usersService: UsersService) { }
+	constructor(private readonly usersService: UsersService) {}
 
 	@Get('me')
 	@UseGuards(JwtAuthGuard)

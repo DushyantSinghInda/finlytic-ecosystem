@@ -20,6 +20,9 @@ export interface AuthLibOptions {
 }
 
 declare global {
+	// Express augments its own types via namespace merging; there is no
+	// ES module equivalent for extending the Request interface.
+	// eslint-disable-next-line @typescript-eslint/no-namespace
 	namespace Express {
 		interface Request {
 			user?: AuthenticatedUser;

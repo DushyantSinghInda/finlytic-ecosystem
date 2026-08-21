@@ -43,7 +43,7 @@ export class AuthService implements OnModuleInit {
 		private readonly tokenService: TokenService,
 		private readonly configService: ConfigService,
 		private readonly refreshTokenService: RefreshTokenService,
-	) { }
+	) {}
 
 	async onModuleInit(): Promise<void> {
 		this.decoyHash = await argon2.hash(

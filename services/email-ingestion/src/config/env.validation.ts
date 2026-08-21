@@ -1,12 +1,36 @@
 import { z } from 'zod';
 
 export const envSchema = z.object({
-	NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+	NODE_ENV: z
+		.enum(['development', 'test', 'production'])
+		.default('development'),
 	PORT: z.coerce.number().int().positive().default(3002),
 
 	JWT_PUBLIC_KEY_PATH: z.string().min(1),
 	JWT_ISSUER: z.string().min(1),
 	JWT_AUDIENCE: z.string().min(1),
+
+	DATABASE_URL: z
+		.string()
+		.startsWith('postgresql://', 'must be a postgresql:// URL'),
+
+	ENCRYPTION_KEY: z
+		.string()
+		.refine(
+			(value) => Buffer.from(value, 'base64').length === 32,
+			'must be 32 bytes, base64-encoded (AES-256)',
+		),
+
+	GOOGLE_CLIENT_ID: z.string().min(1),
+	GOOGLE_CLIENT_SECRET: z.string().min(1),
+	GOOGLE_REDIRECT_URI: z.string().startsWith('http'),
+
+	OAUTH_STATE_SECRET: z
+		.string()
+		.refine(
+			(value) => Buffer.from(value, 'base64').length >= 32,
+			'must be at least 32 bytes, base64-encoded',
+		),
 });
 
 export type Env = z.infer<typeof envSchema>;

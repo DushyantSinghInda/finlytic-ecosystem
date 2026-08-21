@@ -3,20 +3,20 @@ import { PrismaService } from './prisma/prisma.service';
 
 @Injectable()
 export class AppService {
-  constructor(private readonly prisma: PrismaService) {}
+	constructor(private readonly prisma: PrismaService) {}
 
-  getHello(): string {
-    return 'Hello World!';
-  }
+	getHello(): string {
+		return 'Hello World!';
+	}
 
-  async checkHealth(): Promise<{
-    status: string;
-    database: string;
-    users: number;
-  }> {
-    await this.prisma.$queryRaw`SELECT 1`;
-    const users = await this.prisma.user.count();
+	async checkHealth(): Promise<{
+		status: string;
+		database: string;
+		users: number;
+	}> {
+		await this.prisma.$queryRaw`SELECT 1`;
+		const users = await this.prisma.user.count();
 
-    return { status: 'ok', database: 'up', users };
-  }
+		return { status: 'ok', database: 'up', users };
+	}
 }

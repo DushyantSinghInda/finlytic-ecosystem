@@ -1,25 +1,14 @@
-import { AuthLibModule } from '@finlytic/auth-lib';
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { SecurityModule } from '../security/security.module';
+import { PrismaModule } from '../prisma/prisma.module';
+import { CryptoModule } from '../crypto/crypto.module';
 import { AccountsController } from './accounts.controller';
+import { AccountsService } from './accounts.service';
 
 @Module({
-	imports: [
-		AuthLibModule.forRootAsync({
-			inject: [ConfigService],
-			useFactory: (config: ConfigService) => ({
-				publicKey: readFileSync(
-					resolve(config.get<string>('JWT_PUBLIC_KEY_PATH')!),
-					'utf8'
-				),
-				issuer: config.get<string>('JWT_ISSUER')!,
-				audience: config.get<string>('JWT_AUDIENCE')!,
-			}),
-		}),
-	],
+	imports: [SecurityModule, PrismaModule, CryptoModule],
 	controllers: [AccountsController],
+	providers: [AccountsService],
+	exports: [AccountsService],
 })
-
-export class AccountsModule { }
+export class AccountsModule {}

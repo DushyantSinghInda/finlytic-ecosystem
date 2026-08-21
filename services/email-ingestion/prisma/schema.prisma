@@ -1,0 +1,55 @@
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  runtime                = "nodejs"
+  moduleFormat           = "cjs"
+  generatedFileExtension = "ts"
+  importFileExtension    = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MailProvider {
+  GMAIL
+  ZOHO
+
+  @@map("mail_provider")
+}
+
+enum AccountStatus {
+  ACTIVE
+  REAUTH_REQUIRED
+  DISABLED
+
+  @@map("account_status")
+}
+
+model MailAccount {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @map("user_id") @db.Uuid
+
+  provider          MailProvider
+  providerAccountId String       @map("provider_account_id")
+  emailAddress      String       @map("email_address")
+
+  status AccountStatus @default(ACTIVE)
+
+  accessTokenEnc     String   @map("access_token_enc")
+  accessTokenExpires DateTime @map("access_token_expires") @db.Timestamptz(3)
+  refreshTokenEnc    String?  @map("refresh_token_enc")
+  scopes             String[]
+
+  syncCursor    String?   @map("sync_cursor")
+  lastSyncedAt  DateTime? @map("last_synced_at") @db.Timestamptz(3)
+  lastSyncError String?   @map("last_sync_error")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([userId, provider, providerAccountId])
+  @@index([userId])
+  @@index([status])
+  @@map("mail_accounts")
+}

@@ -4,9 +4,9 @@ import { User } from '../generated/prisma/client';
 
 @Injectable()
 export class TokenService {
-  constructor(private readonly jwtService: JwtService) {}
+	constructor(private readonly jwtService: JwtService) {}
 
-  issueAccessToken(user: User): Promise<string> {
-    return this.jwtService.signAsync({ role: user.role }, { subject: user.id });
-  }
+	issueAccessToken(user: User): Promise<string> {
+		return this.jwtService.signAsync({ role: user.role }, { subject: user.id });
+	}
 }
