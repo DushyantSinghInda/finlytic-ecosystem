@@ -1,0 +1,28 @@
+{
+	"name": "@finlytic/auth-lib",
+	"version": "0.0.1",
+	"private": true,
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc -p tsconfig.json",
+		"build:watch": "tsc -p tsconfig.json --watch"
+	},
+	"peerDependencies": {
+		"@nestjs/common": "^11.0.0",
+		"@nestjs/jwt": "^11.0.0",
+		"reflect-metadata": "^0.2.0"
+	},
+	"devDependencies": {
+		"@nestjs/common": "^11.0.1",
+		"@nestjs/jwt": "^11.0.2",
+		"@types/express": "^5.0.0",
+		"@types/node": "^24.0.0",
+		"reflect-metadata": "^0.2.2",
+		"rxjs": "^7.8.1",
+		"typescript": "^5.7.3"
+	}
+}

@@ -1,18 +1,20 @@
 {
-    "name": "finlytic-ecosystem",
-    "version": "0.0.0",
-    "private": true,
-    "workspaces": [
-        "services/*",
-        "packages/*"
-    ],
-    "scripts": {
-        "infra:up": "docker compose up -d",
-        "infra:down": "docker compose down",
-        "infra:reset": "docker compose down -v",
-        "infra:logs": "docker compose logs -f"
-    },
-    "engines": {
-        "node": ">=24"
-    }
+	"name": "finlytic-ecosystem",
+	"version": "0.0.0",
+	"private": true,
+	"workspaces": [
+		"services/*",
+		"packages/*"
+	],
+	"scripts": {
+		"build:auth-lib": "npm run build -w packages/auth-lib",
+		"build:all": "npm run build:auth-lib && npm run build -w services/user-management",
+		"infra:up": "docker compose up -d",
+		"infra:down": "docker compose down",
+		"infra:reset": "docker compose down -v",
+		"infra:logs": "docker compose logs -f"
+	},
+	"engines": {
+		"node": ">=24"
+	}
 }
