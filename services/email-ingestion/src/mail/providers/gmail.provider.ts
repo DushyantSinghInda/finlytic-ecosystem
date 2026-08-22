@@ -1,15 +1,27 @@
-import { BadGatewayException, Injectable, Logger } from '@nestjs/common';
+import {
+	BadGatewayException,
+	Injectable,
+	Logger,
+	ServiceUnavailableException,
+	UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MailProvider } from '../../generated/prisma/client';
 import type {
 	ConnectResult,
 	MailProviderAdapter,
+	MessageChangePage,
+	MessageListPage,
 	OAuthTokens,
 	ProviderIdentity,
+	ProviderProfile,
+	RawMessage,
 } from './mail-provider.interface';
 
 const AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
+
+const API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
 
 const SCOPES = [
 	'openid',
@@ -24,6 +36,34 @@ interface GoogleTokenResponse {
 	scope: string;
 	token_type: string;
 	id_token?: string;
+}
+
+interface GmailProfileResponse {
+	emailAddress: string;
+	historyId: string;
+}
+
+interface GmailListResponse {
+	messages?: { id: string; threadId: string }[];
+	nextPageToken?: string;
+}
+
+interface GmailRawMessageResponse {
+	id: string;
+	threadId: string;
+	labelIds?: string[];
+	snippet?: string;
+	sizeEstimate?: number;
+	internalDate: string;
+	raw: string;
+}
+
+interface GmailHistoryResponse {
+	history?: {
+		messagesAdded?: { message: { id: string } }[];
+	}[];
+	nextPageToken?: string;
+	historyId?: string;
 }
 
 @Injectable()
@@ -115,5 +155,122 @@ export class GmailProvider implements MailProviderAdapter {
 		) as { sub: string; email: string };
 
 		return { providerAccountId: claims.sub, emailAddress: claims.email };
+	}
+
+	async getProfile(accessToken: string): Promise<ProviderProfile> {
+		const data = await this.apiGet<GmailProfileResponse>(
+			accessToken,
+			'/profile',
+		);
+
+		return { emailAddress: data.emailAddress, cursor: data.historyId };
+	}
+
+	async listMessageIds(
+		accessToken: string,
+		{
+			pageToken,
+			maxResults = 100,
+		}: { pageToken?: string; maxResults?: number },
+	): Promise<MessageListPage> {
+		const params = new URLSearchParams({ maxResults: String(maxResults) });
+
+		if (pageToken) {
+			params.set('pageToken', pageToken);
+		}
+
+		const data = await this.apiGet<GmailListResponse>(
+			accessToken,
+			`/messages?${params.toString()}`,
+		);
+
+		return {
+			messageIds: (data.messages ?? []).map((message) => message.id),
+			nextPageToken: data.nextPageToken,
+		};
+	}
+
+	async fetchRawMessage(
+		accessToken: string,
+		providerMessageId: string,
+	): Promise<RawMessage> {
+		const data = await this.apiGet<GmailRawMessageResponse>(
+			accessToken,
+			`/messages/${providerMessageId}?format=RAW`,
+		);
+
+		return {
+			providerMessageId: data.id,
+			providerThreadId: data.threadId,
+			labels: data.labelIds ?? [],
+			snippet: data.snippet,
+			sizeBytes: data.sizeEstimate,
+			internalDate: new Date(Number(data.internalDate)),
+			raw: Buffer.from(data.raw, 'base64url'),
+		};
+	}
+
+	async listChangedMessageIds(
+		accessToken: string,
+		{ cursor, pageToken }: { cursor: string; pageToken?: string },
+	): Promise<MessageChangePage> {
+		const params = new URLSearchParams({
+			startHistoryId: cursor,
+			historyTypes: 'messageAdded',
+		});
+
+		if (pageToken) {
+			params.set('pageToken', pageToken);
+		}
+
+		const path = `/history?${params.toString()}`;
+		const response = await this.request(accessToken, path);
+
+		if (response.status === 404) {
+			this.logger.warn(`Gmail history cursor ${cursor} is no longer valid`);
+			return { messageIds: [], cursorInvalid: true };
+		}
+
+		const data = await this.handle<GmailHistoryResponse>(response, path);
+
+		const messageIds = (data.history ?? []).flatMap((entry) =>
+			(entry.messagesAdded ?? []).map((added) => added.message.id),
+		);
+
+		return {
+			messageIds,
+			nextPageToken: data.nextPageToken,
+			cursor: data.historyId,
+		};
+	}
+
+	private request(accessToken: string, path: string): Promise<Response> {
+		return fetch(`${API_BASE}${path}`, {
+			headers: { Authorization: `Bearer ${accessToken}` },
+		});
+	}
+
+	private async handle<T>(response: Response, path: string): Promise<T> {
+		if (!response.ok) {
+			this.logger.error(
+				`Gmail API GET ${path} -> ${response.status}: ${await response.text()}`,
+			);
+
+			if (response.status === 401) {
+				throw new UnauthorizedException('Gmail rejected the access token');
+			}
+
+			if (response.status === 429 || response.status === 403) {
+				throw new ServiceUnavailableException('Gmail rate limit exceeded');
+			}
+
+			throw new BadGatewayException('Gmail API request failed');
+		}
+
+		return (await response.json()) as T;
+	}
+
+	private async apiGet<T>(accessToken: string, path: string): Promise<T> {
+		return this.handle<T>(await this.request(accessToken, path), path);
 	}
 }

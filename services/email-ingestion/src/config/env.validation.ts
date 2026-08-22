@@ -31,6 +31,15 @@ export const envSchema = z.object({
 			(value) => Buffer.from(value, 'base64').length >= 32,
 			'must be at least 32 bytes, base64-encoded',
 		),
+
+	S3_ENDPOINT: z.string().startsWith('http'),
+	S3_REGION: z.string().min(1),
+	S3_BUCKET: z.string().min(1),
+	S3_ACCESS_KEY_ID: z.string().min(1),
+	S3_SECRET_ACCESS_KEY: z.string().min(1),
+
+	REDIS_HOST: z.string().min(1),
+	REDIS_PORT: z.coerce.number().int().positive().default(6379),
 });
 
 export type Env = z.infer<typeof envSchema>;

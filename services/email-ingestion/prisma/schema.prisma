@@ -45,6 +45,8 @@ model MailAccount {
   lastSyncedAt  DateTime? @map("last_synced_at") @db.Timestamptz(3)
   lastSyncError String?   @map("last_sync_error")
 
+  messages Message[]
+
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -52,4 +54,35 @@ model MailAccount {
   @@index([userId])
   @@index([status])
   @@map("mail_accounts")
+}
+
+model Message {
+  id        String @id @default(uuid()) @db.Uuid
+  accountId String @map("account_id") @db.Uuid
+
+  providerMessageId String  @map("provider_message_id")
+  providerThreadId  String? @map("provider_thread_id")
+
+  subject     String?
+  fromAddress String?  @map("from_address")
+  fromName    String?  @map("from_name")
+  toAddresses String[] @map("to_addresses")
+  sentAt      DateTime @map("sent_at") @db.Timestamptz(3)
+
+  snippet        String?
+  labels         String[]
+  sizeBytes      Int?     @map("size_bytes")
+  hasAttachments Boolean  @default(false) @map("has_attachments")
+
+  rawObjectKey String  @map("raw_object_key")
+  bodyTextKey  String? @map("body_text_key")
+
+  ingestedAt DateTime @default(now()) @map("ingested_at") @db.Timestamptz(3)
+
+  account MailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, providerMessageId])
+  @@index([accountId, sentAt])
+  @@index([fromAddress])
+  @@map("messages")
 }

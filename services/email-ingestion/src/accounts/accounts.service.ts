@@ -1,9 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../crypto/encryption.service';
 import { AccountStatus, MailProvider } from '../generated/prisma/client';
 import type { MailAccount } from '../generated/prisma/client';
 import type { ConnectResult } from '../mail/providers/mail-provider.interface';
+import { MailProviderRegistry } from '../mail/mail-provider.registry';
+import { AccountTokenService } from './account-token.service';
+import { SyncQueueService } from '../queue/sync-queue.service';
 
 @Injectable()
 export class AccountsService {
@@ -12,6 +15,9 @@ export class AccountsService {
 	constructor(
 		private readonly prisma: PrismaService,
 		private readonly encryption: EncryptionService,
+		private readonly accountTokens: AccountTokenService,
+		private readonly registry: MailProviderRegistry,
+		private readonly syncQueue: SyncQueueService,
 	) {}
 
 	async connect(
@@ -59,6 +65,59 @@ export class AccountsService {
 		);
 
 		return account;
+	}
+
+	async preview(userId: string, accountId: string) {
+		const account = await this.prisma.mailAccount.findFirst({
+			where: { id: accountId, userId },
+		});
+
+		if (!account) {
+			throw new NotFoundException('Account not found');
+		}
+
+		const accessToken = await this.accountTokens.getAccessToken(account);
+		const adapter = this.registry.get(account.provider);
+
+		const profile = await adapter.getProfile(accessToken);
+		const page = await adapter.listMessageIds(accessToken, { maxResults: 5 });
+
+		const first = page.messageIds.length
+			? await adapter.fetchRawMessage(accessToken, page.messageIds[0])
+			: null;
+
+		return {
+			emailAddress: profile.emailAddress,
+			cursor: profile.cursor,
+			idsReturned: page.messageIds.length,
+			hasMorePages: Boolean(page.nextPageToken),
+			firstMessage: first && {
+				id: first.providerMessageId,
+				sentAt: first.internalDate,
+				labels: first.labels,
+				sizeBytes: first.sizeBytes,
+				rawBytes: first.raw.length,
+				headerPreview: first.raw.subarray(0, 300).toString('utf8'),
+			},
+		};
+	}
+
+	async requestSync(userId: string, accountId: string) {
+		const account = await this.prisma.mailAccount.findFirst({
+			where: { id: accountId, userId },
+			select: { id: true, status: true },
+		});
+
+		if (!account) {
+			throw new NotFoundException('Account not found');
+		}
+
+		const { jobId, alreadyQueued } = await this.syncQueue.enqueueAccountSync(
+			account.id,
+			'manual',
+		);
+
+		return { accepted: true, jobId, alreadyQueued, status: account.status };
 	}
 
 	listForUser(userId: string) {
