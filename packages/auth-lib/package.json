@@ -19,7 +19,7 @@
 		"reflect-metadata": "^0.2.0"
 	},
 	"devDependencies": {
-		"@nestjs/common": "^11.0.1",
+		"@nestjs/common": "^11.2.3",
 		"@nestjs/jwt": "^11.0.2",
 		"@types/express": "^5.0.0",
 		"@types/node": "^24.0.0",
