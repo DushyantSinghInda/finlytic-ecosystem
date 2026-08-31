@@ -4,6 +4,6 @@ import { MailProviderRegistry } from './mail-provider.registry';
 
 @Module({
 	providers: [GmailProvider, MailProviderRegistry],
-	exports: [MailProviderRegistry, GmailProvider],
+	exports: [MailProviderRegistry],
 })
-export class MailModule {}
+export class MailModule { }

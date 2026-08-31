@@ -2,6 +2,7 @@ import {
 	BadRequestException,
 	Controller,
 	Get,
+	Param,
 	Query,
 	UseGuards,
 } from '@nestjs/common';
@@ -10,39 +11,41 @@ import {
 	JwtAuthGuard,
 	type AuthenticatedUser,
 } from '@finlytic/auth-lib';
-import { GmailProvider } from '../mail/providers/gmail.provider';
+import { MailProviderRegistry } from '../mail/mail-provider.registry';
 import { AccountsService } from '../accounts/accounts.service';
 import { OAuthStateService } from './oauth-state.service';
-import { MailProvider } from '../generated/prisma/client';
 
-@Controller('oauth/gmail')
+@Controller('oauth/:provider')
 export class OAuthController {
 	constructor(
-		private readonly gmailProvider: GmailProvider,
+		private readonly registry: MailProviderRegistry,
 		private readonly oauthState: OAuthStateService,
 		private readonly accountsService: AccountsService,
-	) {}
+	) { }
 
 	@Get('authorize')
 	@UseGuards(JwtAuthGuard)
-	authorize(@CurrentUser() user: AuthenticatedUser): {
-		authorizationUrl: string;
-	} {
+	authorize(
+		@Param('provider') slug: string,
+		@CurrentUser() user: AuthenticatedUser,
+	): { authorizationUrl: string } {
+		const { adapter } = this.registry.resolve(slug);
 		const state = this.oauthState.issue(user.id);
 
-		return {
-			authorizationUrl: this.gmailProvider.buildAuthorizationUrl(state),
-		};
+		return { authorizationUrl: adapter.buildAuthorizationUrl(state) };
 	}
 
 	@Get('callback')
 	async callback(
+		@Param('provider') slug: string,
 		@Query('code') code?: string,
 		@Query('state') state?: string,
 		@Query('error') error?: string,
 	) {
+		const { provider, adapter } = this.registry.resolve(slug);
+
 		if (error) {
-			throw new BadRequestException(`Google declined the request: ${error}`);
+			throw new BadRequestException(`${provider} declined the request: ${error}`);
 		}
 
 		if (!code || !state) {
@@ -50,15 +53,12 @@ export class OAuthController {
 		}
 
 		const userId = this.oauthState.verify(state);
-		const result = await this.gmailProvider.exchangeCode(code);
-		const account = await this.accountsService.connect(
-			userId,
-			MailProvider.GMAIL,
-			result,
-		);
+		const result = await adapter.exchangeCode(code);
+		const account = await this.accountsService.connect(userId, provider, result);
 
 		return {
 			connected: true,
+			provider: account.provider,
 			accountId: account.id,
 			emailAddress: account.emailAddress,
 			scopes: account.scopes,

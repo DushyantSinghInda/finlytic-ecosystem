@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { MailProvider } from '../generated/prisma/client';
 import { GmailProvider } from './providers/gmail.provider';
 import type { MailProviderAdapter } from './providers/mail-provider.interface';
@@ -19,5 +19,23 @@ export class MailProviderRegistry {
 		}
 
 		return adapter;
+	}
+
+	/** Maps a URL path segment ('gmail') to a provider that actually has an adapter. */
+	resolve(slug: string): {
+		provider: MailProvider;
+		adapter: MailProviderAdapter;
+	} {
+		const key = slug.toUpperCase();
+		const isKnown = (Object.values(MailProvider) as string[]).includes(key);
+		const provider = isKnown ? (key as MailProvider) : undefined;
+		const adapter = provider && this.adapters.get(provider);
+
+		// The enum knows about ZOHO before the code does — the map is the real gate.
+		if (!provider || !adapter) {
+			throw new NotFoundException(`Unknown mail provider '${slug}'`);
+		}
+
+		return { provider, adapter };
 	}
 }

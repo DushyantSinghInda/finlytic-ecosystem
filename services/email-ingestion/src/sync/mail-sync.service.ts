@@ -19,13 +19,6 @@ export interface SyncOutcome {
 	skipped: number;
 }
 
-export interface SyncOutcome {
-	accountId: string;
-	fetched: number;
-	created: number;
-	skipped: number;
-}
-
 @Injectable()
 export class MailSyncService {
 	private readonly logger = new Logger(MailSyncService.name);
@@ -35,7 +28,7 @@ export class MailSyncService {
 		private readonly accountTokens: AccountTokenService,
 		private readonly registry: MailProviderRegistry,
 		private readonly ingestion: MessageIngestionService,
-	) {}
+	) { }
 
 	async syncAccount(accountId: string): Promise<SyncOutcome> {
 		const account = await this.prisma.mailAccount.findUnique({
