@@ -13,7 +13,7 @@ const bullRoot = BullModule.forRootAsync({
 		},
 		defaultJobOptions: {
 			attempts: 5,
-			backoff: { type: 'exponential', delay: 5_000 },
+			backoff: { type: 'exponential', delay: 60_000 },
 			removeOnComplete: true,
 			removeOnFail: { age: 86_400 },
 		},
@@ -27,4 +27,4 @@ const syncQueue = BullModule.registerQueue({ name: MAIL_SYNC_QUEUE });
 	providers: [SyncQueueService],
 	exports: [bullRoot, syncQueue, SyncQueueService],
 })
-export class QueueModule {}
+export class QueueModule { }

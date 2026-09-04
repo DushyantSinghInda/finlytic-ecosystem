@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../crypto/encryption.service';
 import { AccountStatus, MailProvider } from '../generated/prisma/client';
@@ -18,13 +18,28 @@ export class AccountsService {
 		private readonly accountTokens: AccountTokenService,
 		private readonly registry: MailProviderRegistry,
 		private readonly syncQueue: SyncQueueService,
-	) {}
+	) { }
 
 	async connect(
 		userId: string,
 		provider: MailProvider,
 		{ tokens, identity }: ConnectResult,
 	): Promise<MailAccount> {
+		const adapter = this.registry.get(provider);
+		const missing = adapter.requiredScopes.filter(
+			(scope) => !tokens.scopes.includes(scope),
+		);
+
+		// Throw BEFORE the upsert — a partial grant must not overwrite a working account.
+		if (missing.length) {
+			this.logger.warn(
+				`User ${userId} completed ${provider} consent without: ${missing.join(', ')}`,
+			);
+
+			throw new ForbiddenException(
+				`Consent incomplete — missing ${missing.join(', ')}. Reconnect and approve every permission.`,
+			);
+		}
 		const accessTokenEnc = this.encryption.encrypt(tokens.accessToken);
 		const refreshTokenEnc = tokens.refreshToken
 			? this.encryption.encrypt(tokens.refreshToken)

@@ -23,11 +23,9 @@ const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 
 const API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
 
-const SCOPES = [
-	'openid',
-	'email',
-	'https://www.googleapis.com/auth/gmail.readonly',
-];
+const GMAIL_READONLY = 'https://www.googleapis.com/auth/gmail.readonly';
+
+const SCOPES = ['openid', 'email', GMAIL_READONLY];
 
 interface GoogleTokenResponse {
 	access_token: string;
@@ -69,9 +67,10 @@ interface GmailHistoryResponse {
 @Injectable()
 export class GmailProvider implements MailProviderAdapter {
 	readonly provider = MailProvider.GMAIL;
+	readonly requiredScopes = [GMAIL_READONLY];
 	private readonly logger = new Logger(GmailProvider.name);
 
-	constructor(private readonly configService: ConfigService) {}
+	constructor(private readonly configService: ConfigService) { }
 
 	buildAuthorizationUrl(state: string): string {
 		const params = new URLSearchParams({
@@ -193,11 +192,16 @@ export class GmailProvider implements MailProviderAdapter {
 	async fetchRawMessage(
 		accessToken: string,
 		providerMessageId: string,
-	): Promise<RawMessage> {
-		const data = await this.apiGet<GmailRawMessageResponse>(
-			accessToken,
-			`/messages/${providerMessageId}?format=RAW`,
-		);
+	): Promise<RawMessage | null> {
+		const path = `/messages/${providerMessageId}?format=RAW`;
+		const response = await this.request(accessToken, path);
+
+		if (response.status === 404) {
+			this.logger.warn(`Gmail message ${providerMessageId} no longer exists`);
+			return null;
+		}
+
+		const data = await this.handle<GmailRawMessageResponse>(response, path);
 
 		return {
 			providerMessageId: data.id,

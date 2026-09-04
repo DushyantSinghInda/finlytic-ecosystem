@@ -17,6 +17,7 @@ export interface SyncOutcome {
 	fetched: number;
 	created: number;
 	skipped: number;
+	gone: number;
 }
 
 @Injectable()
@@ -59,7 +60,7 @@ export class MailSyncService {
 			});
 
 			this.logger.log(
-				`Account ${account.id} [${outcome.mode}]: ${outcome.created} new, ${outcome.skipped} already stored`,
+				`Account ${account.id} [${outcome.mode}]: ${outcome.created} new, ${outcome.skipped} already stored, ${outcome.gone} gone`,
 			);
 
 			return outcome;
@@ -159,21 +160,37 @@ export class MailSyncService {
 		accessToken: string,
 		adapter: MailProviderAdapter,
 		messageIds: string[],
-	): Promise<{ fetched: number; created: number; skipped: number }> {
-		let created = 0;
-		let skipped = 0;
+	): Promise<{ fetched: number; created: number; skipped: number; gone: number }> {
+		// The dedupe check must sit BEFORE the fetch. After it, the quota is already spent.
+		const stored = await this.prisma.message.findMany({
+			where: { accountId: account.id, providerMessageId: { in: messageIds } },
+			select: { providerMessageId: true },
+		});
 
-		for (const providerMessageId of messageIds) {
+		const known = new Set(stored.map((row) => row.providerMessageId));
+		const toFetch = messageIds.filter((id) => !known.has(id));
+
+		let created = 0;
+		let skipped = known.size;
+		let gone = 0;
+
+		for (const providerMessageId of toFetch) {
 			const raw = await adapter.fetchRawMessage(accessToken, providerMessageId);
+
+			if (!raw) {
+				gone++;
+				continue;
+			}
+
 			const result = await this.ingestion.ingest(account, raw);
 
 			if (result.created) {
 				created++;
 			} else {
-				skipped++;
+				skipped++; // raced with the other worker (concurrency: 2)
 			}
 		}
 
-		return { fetched: messageIds.length, created, skipped };
+		return { fetched: toFetch.length, created, skipped, gone };
 	}
 }
