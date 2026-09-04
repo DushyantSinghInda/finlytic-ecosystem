@@ -3,6 +3,8 @@ import {
 	BadRequestException,
 	Injectable,
 	Logger,
+	ServiceUnavailableException,
+	UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MailProvider } from '../../generated/prisma/client';
@@ -56,6 +58,14 @@ interface ZohoAccountsResponse {
 	data?: { accountId: string; primaryEmailAddress: string }[];
 }
 
+interface ZohoMessage {
+	messageId: string;
+	threadId?: string;
+	receivedTime: string;
+	size?: string;
+	summary?: string;
+}
+
 @Injectable()
 export class ZohoProvider implements MailProviderAdapter {
 	readonly provider = MailProvider.ZOHO;
@@ -64,6 +74,58 @@ export class ZohoProvider implements MailProviderAdapter {
 	private readonly logger = new Logger(ZohoProvider.name);
 
 	constructor(private readonly configService: ConfigService) {}
+
+	private async request(
+		connection: ProviderConnection,
+		path: string,
+	): Promise<Response> {
+		const base = this.resolveLocation(connection.metadata.location).mail;
+		const url = `${base}/api/accounts/${connection.providerAccountId}${path}`;
+
+		try {
+			return await fetch(url, {
+				headers: { Authorization: `Zoho-oauthtoken ${connection.accessToken}` },
+			});
+		} catch (error) {
+			// undici collapses every transport failure into "fetch failed". The actual
+			// reason only exists on .cause — without this the log says nothing.
+			const cause = (error as Error).cause;
+			const detail =
+				cause instanceof Error
+					? `${cause.name}: ${cause.message}`
+					: String(cause);
+
+			this.logger.error(`Zoho transport failure on ${path} — ${detail}`);
+
+			throw new ServiceUnavailableException(
+				`Zoho transport failure: ${detail}`,
+			);
+		}
+	}
+
+	private async handle<T>(response: Response, path: string): Promise<T> {
+		if (!response.ok) {
+			this.logger.error(
+				`Zoho API GET ${path} -> ${response.status}: ${await response.text()}`,
+			);
+
+			if (response.status === 401) {
+				throw new UnauthorizedException('Zoho rejected the access token');
+			}
+
+			if (response.status === 429) {
+				throw new ServiceUnavailableException('Zoho rate limit exceeded');
+			}
+
+			throw new BadGatewayException('Zoho API request failed');
+		}
+
+		return ((await response.json()) as { data: T }).data;
+	}
+
+	private view(start: number, limit: number): string {
+		return `/messages/view?start=${start}&limit=${limit}&sortBy=date&sortorder=false`;
+	}
 
 	buildAuthorizationUrl(state: string): string {
 		const params = new URLSearchParams({
@@ -206,28 +268,105 @@ export class ZohoProvider implements MailProviderAdapter {
 
 	// --- 7c-ii(b) ---
 
-	getProfile(_connection: ProviderConnection): Promise<ProviderProfile> {
-		throw new Error('ZohoProvider.getProfile not implemented');
+	async getProfile(connection: ProviderConnection): Promise<ProviderProfile> {
+		const centre = this.resolveLocation(connection.metadata.location);
+		const identity = await this.fetchIdentity(
+			centre.mail,
+			connection.accessToken,
+		);
+
+		const path = this.view(1, 1);
+		const [newest] = await this.handle<ZohoMessage[]>(
+			await this.request(connection, path),
+			path,
+		);
+
+		return {
+			emailAddress: identity.emailAddress,
+			// No history log. The cursor is a received-time watermark — and it must come
+			// from THEIR clock. Date.now() would let skew open a permanent gap.
+			cursor: newest?.receivedTime ?? '0',
+		};
 	}
 
-	listMessageIds(
-		_connection: ProviderConnection,
-		_options: { pageToken?: string; maxResults?: number },
+	async listMessageIds(
+		connection: ProviderConnection,
+		{
+			pageToken,
+			maxResults = 100,
+		}: { pageToken?: string; maxResults?: number },
 	): Promise<MessageListPage> {
-		throw new Error('ZohoProvider.listMessageIds not implemented');
+		const start = Number(pageToken ?? '1'); // Zoho's paging is 1-based.
+		const limit = Math.min(maxResults, 200);
+		const path = this.view(start, limit);
+
+		const data = await this.handle<ZohoMessage[]>(
+			await this.request(connection, path),
+			path,
+		);
+
+		return {
+			messageIds: data.map((message) => message.messageId),
+			// Zoho pages by offset, not token. Opaque either way.
+			nextPageToken: data.length === limit ? String(start + limit) : undefined,
+		};
 	}
 
-	listChangedMessageIds(
-		_connection: ProviderConnection,
-		_options: { cursor: string; pageToken?: string },
+	async listChangedMessageIds(
+		connection: ProviderConnection,
+		{ cursor, pageToken }: { cursor: string; pageToken?: string },
 	): Promise<MessageChangePage> {
-		throw new Error('ZohoProvider.listChangedMessageIds not implemented');
+		const since = Number(cursor);
+		const start = Number(pageToken ?? '1');
+		const limit = 200;
+		const path = this.view(start, limit);
+
+		const data = await this.handle<ZohoMessage[]>(
+			await this.request(connection, path),
+			path,
+		);
+
+		// `>=` overlaps deliberately: two messages can share a millisecond. A repeat is
+		// free under the unique constraint; a gap would be permanent and silent.
+		const fresh = data.filter(
+			(message) => Number(message.receivedTime) >= since,
+		);
+
+		return {
+			messageIds: fresh.map((message) => message.messageId),
+			// Stop the moment a page runs past the watermark.
+			nextPageToken:
+				fresh.length === data.length && data.length === limit
+					? String(start + limit)
+					: undefined,
+			// Only page 1 holds the globally newest message — later pages are older,
+			// and MailSyncService overwrites nextCursor whenever this is set.
+			cursor: start === 1 ? data[0]?.receivedTime : undefined,
+			// No cursorInvalid: a timestamp never expires. That case is Gmail's alone.
+		};
 	}
 
-	fetchRawMessage(
-		_connection: ProviderConnection,
-		_providerMessageId: string,
+	async fetchRawMessage(
+		connection: ProviderConnection,
+		providerMessageId: string,
 	): Promise<RawMessage | null> {
-		throw new Error('ZohoProvider.fetchRawMessage not implemented');
+		const path = `/messages/${providerMessageId}/originalmessage`;
+		const response = await this.request(connection, path);
+
+		if (response.status === 404) {
+			this.logger.warn(`Zoho message ${providerMessageId} no longer exists`);
+			return null;
+		}
+
+		const data = await this.handle<{ messageId: number; content: string }>(
+			response,
+			path,
+		);
+
+		return {
+			providerMessageId,
+			labels: [],
+			raw: Buffer.from(data.content, 'utf8'),
+		};
 	}
 }

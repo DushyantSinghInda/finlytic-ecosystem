@@ -6,6 +6,7 @@ export type ProviderMetadata = Record<string, string>;
 /** Everything an adapter needs to make one authenticated call. */
 export interface ProviderConnection {
 	accessToken: string;
+	providerAccountId: string;
 	metadata: ProviderMetadata;
 }
 
@@ -50,8 +51,8 @@ export interface RawMessage {
 	labels: string[];
 	snippet?: string;
 	sizeBytes?: number;
-	/** When the provider received it. */
-	internalDate: Date;
+	/** When the provider received it, if it says. The MIME Date header is authoritative. */
+	internalDate?: Date;
 	/** The complete original RFC-822 message. */
 	raw: Buffer;
 }

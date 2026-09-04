@@ -28,11 +28,16 @@ export class AccountTokenService {
 		if (remainingMs > REFRESH_SKEW_MS) {
 			return {
 				accessToken: this.encryption.decrypt(account.accessTokenEnc),
+				providerAccountId: account.providerAccountId,
 				metadata,
 			};
 		}
 
-		return { accessToken: await this.refresh(account, metadata), metadata };
+		return {
+			accessToken: await this.refresh(account, metadata),
+			providerAccountId: account.providerAccountId,
+			metadata,
+		};
 	}
 
 	private async refresh(

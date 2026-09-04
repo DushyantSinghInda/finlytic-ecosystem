@@ -35,7 +35,7 @@ export class MessageIngestionService {
 		}
 
 		const parsed = await simpleParser(raw.raw);
-		const sentAt = parsed.date ?? raw.internalDate;
+		const sentAt = parsed.date ?? raw.internalDate ?? new Date();
 
 		// Blob first, pointer second.
 		const rawObjectKey = this.storage.buildRawKey(
