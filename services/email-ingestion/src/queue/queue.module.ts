@@ -27,4 +27,4 @@ const syncQueue = BullModule.registerQueue({ name: MAIL_SYNC_QUEUE });
 	providers: [SyncQueueService],
 	exports: [bullRoot, syncQueue, SyncQueueService],
 })
-export class QueueModule { }
+export class QueueModule {}

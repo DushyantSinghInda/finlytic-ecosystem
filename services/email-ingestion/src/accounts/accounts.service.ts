@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+	ForbiddenException,
+	Injectable,
+	Logger,
+	NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../crypto/encryption.service';
 import { AccountStatus, MailProvider } from '../generated/prisma/client';
@@ -18,7 +23,7 @@ export class AccountsService {
 		private readonly accountTokens: AccountTokenService,
 		private readonly registry: MailProviderRegistry,
 		private readonly syncQueue: SyncQueueService,
-	) { }
+	) {}
 
 	async connect(
 		userId: string,

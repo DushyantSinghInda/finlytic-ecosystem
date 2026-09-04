@@ -21,7 +21,7 @@ export class OAuthController {
 		private readonly registry: MailProviderRegistry,
 		private readonly oauthState: OAuthStateService,
 		private readonly accountsService: AccountsService,
-	) { }
+	) {}
 
 	@Get('authorize')
 	@UseGuards(JwtAuthGuard)
@@ -45,7 +45,9 @@ export class OAuthController {
 		const { provider, adapter } = this.registry.resolve(slug);
 
 		if (error) {
-			throw new BadRequestException(`${provider} declined the request: ${error}`);
+			throw new BadRequestException(
+				`${provider} declined the request: ${error}`,
+			);
 		}
 
 		if (!code || !state) {
@@ -54,7 +56,11 @@ export class OAuthController {
 
 		const userId = this.oauthState.verify(state);
 		const result = await adapter.exchangeCode(code);
-		const account = await this.accountsService.connect(userId, provider, result);
+		const account = await this.accountsService.connect(
+			userId,
+			provider,
+			result,
+		);
 
 		return {
 			connected: true,

@@ -54,10 +54,10 @@ export interface ProviderProfile {
 export interface MailProviderAdapter {
 	readonly provider: MailProvider;
 	/**
-			 * Scopes the service cannot function without, in the exact form the provider
-			 * RETURNS them — not necessarily the form we request. Google turns a request
-			 * for 'email' into 'https://www.googleapis.com/auth/userinfo.email'.
-			 */
+	 * Scopes the service cannot function without, in the exact form the provider
+	 * RETURNS them — not necessarily the form we request. Google turns a request
+	 * for 'email' into 'https://www.googleapis.com/auth/userinfo.email'.
+	 */
 	readonly requiredScopes: string[];
 
 	buildAuthorizationUrl(state: string): string;
@@ -77,9 +77,9 @@ export interface MailProviderAdapter {
 	): Promise<MessageChangePage>;
 
 	/**
-			 * Returns null when the provider no longer has the message. Not an error:
-			 * the id came from a log of what happened, not a snapshot of what exists.
-			 */
+	 * Returns null when the provider no longer has the message. Not an error:
+	 * the id came from a log of what happened, not a snapshot of what exists.
+	 */
 	fetchRawMessage(
 		accessToken: string,
 		providerMessageId: string,

@@ -6,4 +6,4 @@ import { MailProviderRegistry } from './mail-provider.registry';
 	providers: [GmailProvider, MailProviderRegistry],
 	exports: [MailProviderRegistry],
 })
-export class MailModule { }
+export class MailModule {}

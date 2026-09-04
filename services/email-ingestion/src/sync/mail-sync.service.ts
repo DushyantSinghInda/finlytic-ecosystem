@@ -29,7 +29,7 @@ export class MailSyncService {
 		private readonly accountTokens: AccountTokenService,
 		private readonly registry: MailProviderRegistry,
 		private readonly ingestion: MessageIngestionService,
-	) { }
+	) {}
 
 	async syncAccount(accountId: string): Promise<SyncOutcome> {
 		const account = await this.prisma.mailAccount.findUnique({
@@ -160,7 +160,12 @@ export class MailSyncService {
 		accessToken: string,
 		adapter: MailProviderAdapter,
 		messageIds: string[],
-	): Promise<{ fetched: number; created: number; skipped: number; gone: number }> {
+	): Promise<{
+		fetched: number;
+		created: number;
+		skipped: number;
+		gone: number;
+	}> {
 		// The dedupe check must sit BEFORE the fetch. After it, the quota is already spent.
 		const stored = await this.prisma.message.findMany({
 			where: { accountId: account.id, providerMessageId: { in: messageIds } },

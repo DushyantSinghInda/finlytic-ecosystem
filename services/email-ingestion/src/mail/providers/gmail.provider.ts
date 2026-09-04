@@ -70,7 +70,7 @@ export class GmailProvider implements MailProviderAdapter {
 	readonly requiredScopes = [GMAIL_READONLY];
 	private readonly logger = new Logger(GmailProvider.name);
 
-	constructor(private readonly configService: ConfigService) { }
+	constructor(private readonly configService: ConfigService) {}
 
 	buildAuthorizationUrl(state: string): string {
 		const params = new URLSearchParams({
