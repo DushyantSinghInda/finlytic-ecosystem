@@ -2,13 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { MailProvider } from '../generated/prisma/client';
 import { GmailProvider } from './providers/gmail.provider';
 import type { MailProviderAdapter } from './providers/mail-provider.interface';
+import { ZohoProvider } from './providers/zoho.provider';
 
 @Injectable()
 export class MailProviderRegistry {
 	private readonly adapters = new Map<MailProvider, MailProviderAdapter>();
 
-	constructor(gmail: GmailProvider) {
+	constructor(gmail: GmailProvider, zoho: ZohoProvider) {
 		this.adapters.set(MailProvider.GMAIL, gmail);
+		this.adapters.set(MailProvider.ZOHO, zoho);
 	}
 
 	get(provider: MailProvider): MailProviderAdapter {
