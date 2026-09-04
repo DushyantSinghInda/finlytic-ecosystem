@@ -1,5 +1,14 @@
 import type { MailProvider } from '../../generated/prisma/client';
 
+/** Opaque provider-specific context, persisted per account. */
+export type ProviderMetadata = Record<string, string>;
+
+/** Everything an adapter needs to make one authenticated call. */
+export interface ProviderConnection {
+	accessToken: string;
+	metadata: ProviderMetadata;
+}
+
 export interface OAuthTokens {
 	accessToken: string;
 	/** Absent when a provider only issues one on first consent. */
@@ -17,6 +26,8 @@ export interface ProviderIdentity {
 export interface ConnectResult {
 	tokens: OAuthTokens;
 	identity: ProviderIdentity;
+	/** Routing context to persist. Gmail returns none; Zoho returns its data centre. */
+	metadata?: ProviderMetadata;
 }
 
 export interface MessageChangePage {
@@ -61,18 +72,29 @@ export interface MailProviderAdapter {
 	readonly requiredScopes: string[];
 
 	buildAuthorizationUrl(state: string): string;
-	exchangeCode(code: string): Promise<ConnectResult>;
-	refreshAccessToken(refreshToken: string): Promise<OAuthTokens>;
+	/**
+	 * `params` is every query parameter the provider appended to the redirect.
+	 * Gmail needs only `code`; Zoho reads its data centre from `accounts-server`.
+	 */
+	exchangeCode(
+		code: string,
+		params: Record<string, string>,
+	): Promise<ConnectResult>;
 
-	getProfile(accessToken: string): Promise<ProviderProfile>;
+	refreshAccessToken(
+		refreshToken: string,
+		metadata: ProviderMetadata,
+	): Promise<OAuthTokens>;
+
+	getProfile(connection: ProviderConnection): Promise<ProviderProfile>;
 
 	listMessageIds(
-		accessToken: string,
+		connection: ProviderConnection,
 		options: { pageToken?: string; maxResults?: number },
 	): Promise<MessageListPage>;
 
 	listChangedMessageIds(
-		accessToken: string,
+		connection: ProviderConnection,
 		options: { cursor: string; pageToken?: string },
 	): Promise<MessageChangePage>;
 
@@ -81,7 +103,7 @@ export interface MailProviderAdapter {
 	 * the id came from a log of what happened, not a snapshot of what exists.
 	 */
 	fetchRawMessage(
-		accessToken: string,
+		connection: ProviderConnection,
 		providerMessageId: string,
 	): Promise<RawMessage | null>;
 }

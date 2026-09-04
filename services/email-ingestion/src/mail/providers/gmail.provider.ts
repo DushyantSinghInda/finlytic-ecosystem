@@ -13,6 +13,7 @@ import type {
 	MessageChangePage,
 	MessageListPage,
 	OAuthTokens,
+	ProviderConnection,
 	ProviderIdentity,
 	ProviderProfile,
 	RawMessage,
@@ -156,9 +157,9 @@ export class GmailProvider implements MailProviderAdapter {
 		return { providerAccountId: claims.sub, emailAddress: claims.email };
 	}
 
-	async getProfile(accessToken: string): Promise<ProviderProfile> {
+	async getProfile(connection: ProviderConnection): Promise<ProviderProfile> {
 		const data = await this.apiGet<GmailProfileResponse>(
-			accessToken,
+			connection.accessToken,
 			'/profile',
 		);
 
@@ -166,7 +167,7 @@ export class GmailProvider implements MailProviderAdapter {
 	}
 
 	async listMessageIds(
-		accessToken: string,
+		connection: ProviderConnection,
 		{
 			pageToken,
 			maxResults = 100,
@@ -179,7 +180,7 @@ export class GmailProvider implements MailProviderAdapter {
 		}
 
 		const data = await this.apiGet<GmailListResponse>(
-			accessToken,
+			connection.accessToken,
 			`/messages?${params.toString()}`,
 		);
 
@@ -190,11 +191,11 @@ export class GmailProvider implements MailProviderAdapter {
 	}
 
 	async fetchRawMessage(
-		accessToken: string,
+		connection: ProviderConnection,
 		providerMessageId: string,
 	): Promise<RawMessage | null> {
 		const path = `/messages/${providerMessageId}?format=RAW`;
-		const response = await this.request(accessToken, path);
+		const response = await this.request(connection.accessToken, path);
 
 		if (response.status === 404) {
 			this.logger.warn(`Gmail message ${providerMessageId} no longer exists`);
@@ -215,7 +216,7 @@ export class GmailProvider implements MailProviderAdapter {
 	}
 
 	async listChangedMessageIds(
-		accessToken: string,
+		connection: ProviderConnection,
 		{ cursor, pageToken }: { cursor: string; pageToken?: string },
 	): Promise<MessageChangePage> {
 		const params = new URLSearchParams({
@@ -228,7 +229,7 @@ export class GmailProvider implements MailProviderAdapter {
 		}
 
 		const path = `/history?${params.toString()}`;
-		const response = await this.request(accessToken, path);
+		const response = await this.request(connection.accessToken, path);
 
 		if (response.status === 404) {
 			this.logger.warn(`Gmail history cursor ${cursor} is no longer valid`);

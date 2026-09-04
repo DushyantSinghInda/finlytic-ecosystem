@@ -28,7 +28,7 @@ export class AccountsService {
 	async connect(
 		userId: string,
 		provider: MailProvider,
-		{ tokens, identity }: ConnectResult,
+		{ tokens, identity, metadata }: ConnectResult,
 	): Promise<MailAccount> {
 		const adapter = this.registry.get(provider);
 		const missing = adapter.requiredScopes.filter(
@@ -67,6 +67,7 @@ export class AccountsService {
 				accessTokenExpires: tokens.expiresAt,
 				refreshTokenEnc,
 				scopes: tokens.scopes,
+				...(metadata ? { providerMetadata: metadata } : {}),
 			},
 			update: {
 				emailAddress: identity.emailAddress,
@@ -77,6 +78,7 @@ export class AccountsService {
 				lastSyncError: null,
 				// Only overwrite when the provider actually issued a new one.
 				...(refreshTokenEnc ? { refreshTokenEnc } : {}),
+				...(metadata ? { providerMetadata: metadata } : {}),
 			},
 		});
 
@@ -96,14 +98,14 @@ export class AccountsService {
 			throw new NotFoundException('Account not found');
 		}
 
-		const accessToken = await this.accountTokens.getAccessToken(account);
+		const connection = await this.accountTokens.getConnection(account);
 		const adapter = this.registry.get(account.provider);
 
-		const profile = await adapter.getProfile(accessToken);
-		const page = await adapter.listMessageIds(accessToken, { maxResults: 5 });
+		const profile = await adapter.getProfile(connection);
+		const page = await adapter.listMessageIds(connection, { maxResults: 5 });
 
 		const first = page.messageIds.length
-			? await adapter.fetchRawMessage(accessToken, page.messageIds[0])
+			? await adapter.fetchRawMessage(connection, page.messageIds[0])
 			: null;
 
 		return {

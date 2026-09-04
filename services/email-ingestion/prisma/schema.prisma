@@ -40,6 +40,8 @@ model MailAccount {
   accessTokenExpires DateTime @map("access_token_expires") @db.Timestamptz(3)
   refreshTokenEnc    String?  @map("refresh_token_enc")
   scopes             String[]
+  /// Opaque, provider-specific routing context. Gmail writes nothing; Zoho stores its data centre.
+  providerMetadata   Json?    @map("provider_metadata")
 
   syncCursor    String?   @map("sync_cursor")
   lastSyncedAt  DateTime? @map("last_synced_at") @db.Timestamptz(3)

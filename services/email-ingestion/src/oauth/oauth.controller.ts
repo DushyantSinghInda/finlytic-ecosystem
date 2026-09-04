@@ -38,11 +38,10 @@ export class OAuthController {
 	@Get('callback')
 	async callback(
 		@Param('provider') slug: string,
-		@Query('code') code?: string,
-		@Query('state') state?: string,
-		@Query('error') error?: string,
+		@Query() query: Record<string, string>,
 	) {
 		const { provider, adapter } = this.registry.resolve(slug);
+		const { code, state, error } = query;
 
 		if (error) {
 			throw new BadRequestException(
@@ -55,7 +54,7 @@ export class OAuthController {
 		}
 
 		const userId = this.oauthState.verify(state);
-		const result = await adapter.exchangeCode(code);
+		const result = await adapter.exchangeCode(code, query);
 		const account = await this.accountsService.connect(
 			userId,
 			provider,

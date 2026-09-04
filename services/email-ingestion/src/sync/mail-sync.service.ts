@@ -5,7 +5,10 @@ import { MessageIngestionService } from '../messages/message-ingestion.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UnrecoverableError } from 'bullmq';
 import { AccountStatus } from '../generated/prisma/enums';
-import type { MailProviderAdapter } from '../mail/providers/mail-provider.interface';
+import type {
+	MailProviderAdapter,
+	ProviderConnection,
+} from '../mail/providers/mail-provider.interface';
 import type { MailAccount } from '../generated/prisma/client';
 
 const INITIAL_BATCH = 50;
@@ -47,12 +50,12 @@ export class MailSyncService {
 		}
 
 		try {
-			const accessToken = await this.accountTokens.getAccessToken(account);
+			const connection = await this.accountTokens.getConnection(account);
 			const adapter = this.registry.get(account.provider);
 
 			const outcome = account.syncCursor
-				? await this.incrementalSync(account, accessToken, adapter)
-				: await this.initialSync(account, accessToken, adapter);
+				? await this.incrementalSync(account, connection, adapter)
+				: await this.initialSync(account, connection, adapter);
 
 			await this.prisma.mailAccount.update({
 				where: { id: account.id },
@@ -78,20 +81,20 @@ export class MailSyncService {
 
 	private async initialSync(
 		account: MailAccount,
-		accessToken: string,
+		connection: ProviderConnection,
 		adapter: MailProviderAdapter,
 	): Promise<SyncOutcome> {
 		// Capture the cursor BEFORE fetching, so mail arriving mid-sync is
 		// picked up next run instead of falling into the gap.
-		const profile = await adapter.getProfile(accessToken);
+		const profile = await adapter.getProfile(connection);
 
-		const page = await adapter.listMessageIds(accessToken, {
+		const page = await adapter.listMessageIds(connection, {
 			maxResults: INITIAL_BATCH,
 		});
 
 		const counts = await this.ingestAll(
 			account,
-			accessToken,
+			connection,
 			adapter,
 			page.messageIds,
 		);
@@ -106,7 +109,7 @@ export class MailSyncService {
 
 	private async incrementalSync(
 		account: MailAccount,
-		accessToken: string,
+		connection: ProviderConnection,
 		adapter: MailProviderAdapter,
 	): Promise<SyncOutcome> {
 		const cursor = account.syncCursor!;
@@ -116,7 +119,7 @@ export class MailSyncService {
 		let nextCursor = cursor;
 
 		do {
-			const page = await adapter.listChangedMessageIds(accessToken, {
+			const page = await adapter.listChangedMessageIds(connection, {
 				cursor,
 				pageToken,
 			});
@@ -131,7 +134,7 @@ export class MailSyncService {
 					data: { syncCursor: null },
 				});
 
-				return this.initialSync(account, accessToken, adapter);
+				return this.initialSync(account, connection, adapter);
 			}
 
 			page.messageIds.forEach((id) => collected.add(id));
@@ -143,7 +146,7 @@ export class MailSyncService {
 			pageToken = page.nextPageToken;
 		} while (pageToken && collected.size < MAX_IDS_PER_RUN);
 
-		const counts = await this.ingestAll(account, accessToken, adapter, [
+		const counts = await this.ingestAll(account, connection, adapter, [
 			...collected,
 		]);
 
@@ -157,7 +160,7 @@ export class MailSyncService {
 
 	private async ingestAll(
 		account: MailAccount,
-		accessToken: string,
+		connection: ProviderConnection,
 		adapter: MailProviderAdapter,
 		messageIds: string[],
 	): Promise<{
@@ -180,7 +183,7 @@ export class MailSyncService {
 		let gone = 0;
 
 		for (const providerMessageId of toFetch) {
-			const raw = await adapter.fetchRawMessage(accessToken, providerMessageId);
+			const raw = await adapter.fetchRawMessage(connection, providerMessageId);
 
 			if (!raw) {
 				gone++;

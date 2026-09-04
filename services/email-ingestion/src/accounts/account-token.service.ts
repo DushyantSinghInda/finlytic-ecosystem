@@ -4,6 +4,10 @@ import { EncryptionService } from '../crypto/encryption.service';
 import { MailProviderRegistry } from '../mail/mail-provider.registry';
 import { AccountStatus } from '../generated/prisma/client';
 import type { MailAccount } from '../generated/prisma/client';
+import type {
+	ProviderConnection,
+	ProviderMetadata,
+} from '../mail/providers/mail-provider.interface';
 
 const REFRESH_SKEW_MS = 5 * 60 * 1000;
 
@@ -17,17 +21,24 @@ export class AccountTokenService {
 		private readonly registry: MailProviderRegistry,
 	) {}
 
-	async getAccessToken(account: MailAccount): Promise<string> {
+	async getConnection(account: MailAccount): Promise<ProviderConnection> {
+		const metadata = (account.providerMetadata ?? {}) as ProviderMetadata;
 		const remainingMs = account.accessTokenExpires.getTime() - Date.now();
 
 		if (remainingMs > REFRESH_SKEW_MS) {
-			return this.encryption.decrypt(account.accessTokenEnc);
+			return {
+				accessToken: this.encryption.decrypt(account.accessTokenEnc),
+				metadata,
+			};
 		}
 
-		return this.refresh(account);
+		return { accessToken: await this.refresh(account, metadata), metadata };
 	}
 
-	private async refresh(account: MailAccount): Promise<string> {
+	private async refresh(
+		account: MailAccount,
+		metadata: ProviderMetadata,
+	): Promise<string> {
 		if (!account.refreshTokenEnc) {
 			await this.markReauthRequired(account.id, 'No refresh token stored');
 			throw new UnauthorizedException('Account requires reconnection');
@@ -38,6 +49,7 @@ export class AccountTokenService {
 		try {
 			const tokens = await adapter.refreshAccessToken(
 				this.encryption.decrypt(account.refreshTokenEnc),
+				metadata,
 			);
 
 			await this.prisma.mailAccount.update({

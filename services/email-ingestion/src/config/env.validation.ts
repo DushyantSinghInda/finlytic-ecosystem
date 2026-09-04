@@ -25,6 +25,11 @@ export const envSchema = z.object({
 	GOOGLE_CLIENT_SECRET: z.string().min(1),
 	GOOGLE_REDIRECT_URI: z.string().startsWith('http'),
 
+	ZOHO_CLIENT_ID: z.string().min(1),
+	ZOHO_CLIENT_SECRET: z.string().min(1),
+	ZOHO_REDIRECT_URI: z.string().startsWith('http'),
+	ZOHO_ACCOUNTS_DOMAIN: z.string().startsWith('https://accounts.zoho.'),
+
 	OAUTH_STATE_SECRET: z
 		.string()
 		.refine(
