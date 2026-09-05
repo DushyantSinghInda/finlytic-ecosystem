@@ -67,6 +67,71 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+  email-ingestion-api:
+    build:
+      context: .
+      dockerfile: services/email-ingestion/Dockerfile
+    image: finlytic/email-ingestion:dev
+    container_name: finlytic-email-api
+    restart: unless-stopped
+    env_file:
+      - services/email-ingestion/.env
+    environment:
+      # Inside the network, use the service's REAL port. 5434 is a host-side
+      # mapping and does not exist here.
+      DATABASE_URL: postgresql://email_svc:email_dev_pass@postgres-email:5432/email_db?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      S3_ENDPOINT: http://minio:9000
+      # Absolute: cwd is /app, so the local ../../keys value would resolve to /keys.
+      JWT_PUBLIC_KEY_PATH: /app/keys/jwt-public.pem
+    volumes:
+      # The FILE, not the directory. Mounting ./keys would hand the private
+      # signing key to a service that must never possess it (rule 3).
+      - ./keys/jwt-public.pem:/app/keys/jwt-public.pem:ro
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres-email: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      minio: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  email-ingestion-worker:
+    build:
+      context: .
+      dockerfile: services/email-ingestion/Dockerfile
+    image: finlytic/email-ingestion:dev
+    container_name: finlytic-email-worker
+    restart: unless-stopped
+    # Same image, different role — identical code and dependencies, so the API
+    # and the worker cannot drift apart.
+    command: ["node", "services/email-ingestion/dist/main.worker.js"]
+    env_file:
+      - services/email-ingestion/.env
+    environment:
+      DATABASE_URL: postgresql://email_svc:email_dev_pass@postgres-email:5432/email_db?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      S3_ENDPOINT: http://minio:9000
+      JWT_PUBLIC_KEY_PATH: /app/keys/jwt-public.pem
+    volumes:
+      - ./keys/jwt-public.pem:/app/keys/jwt-public.pem:ro
+    depends_on:
+      postgres-email: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      minio: { condition: service_healthy }
 
 volumes:
   postgres-users-data:

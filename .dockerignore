@@ -1,0 +1,19 @@
+# Secrets must never enter the build context — a later RUN rm cannot remove them
+# from the layer that added them.
+**/.env
+**/.env.*
+!**/.env.example
+**/keys/
+*.pem
+
+# Rebuilt inside the image; copying host copies risks a stale or wrong-platform build.
+node_modules
+**/node_modules
+**/dist
+**/src/generated
+
+.git
+.github
+docs
+**/scratch
+**/coverage
