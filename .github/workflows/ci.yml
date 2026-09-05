@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build & lint
+    name: Build, lint & test
     runs-on: ubuntu-latest
 
     env:
