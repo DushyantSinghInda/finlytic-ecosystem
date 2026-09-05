@@ -110,6 +110,43 @@ services:
       retries: 5
       start_period: 10s
 
+  user-management-api:
+    build:
+      context: .
+      dockerfile: services/user-management/Dockerfile
+      target: runtime
+    image: finlytic/user-management:dev
+    container_name: finlytic-user-management-api
+    restart: unless-stopped
+    env_file:
+      - services/user-management/.env
+    environment:
+      DATABASE_URL: postgresql://users_svc:users_dev_pass@postgres-users:5432/users_db?schema=public
+      JWT_PRIVATE_KEY_PATH: /app/keys/jwt-private.pem
+      JWT_PUBLIC_KEY_PATH: /app/keys/jwt-public.pem
+    volumes:
+      # The ONLY service that mounts the private key. Every other service gets the
+      # public one alone — that asymmetry is architecture rule 3, made visible.
+      - ./keys/jwt-private.pem:/app/keys/jwt-private.pem:ro
+      - ./keys/jwt-public.pem:/app/keys/jwt-public.pem:ro
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres-users: { condition: service_healthy }
+      user-management-migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   email-ingestion-worker:
     build:
       context: .
@@ -152,6 +189,19 @@ services:
       DATABASE_URL: postgresql://email_svc:email_dev_pass@postgres-email:5432/email_db?schema=public
     depends_on:
       postgres-email: { condition: service_healthy }
+
+  user-management-migrate:
+    build:
+      context: .
+      dockerfile: services/user-management/Dockerfile
+      target: migrator
+    image: finlytic/user-management-migrate:dev
+    container_name: finlytic-user-management-migrate
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql://users_svc:users_dev_pass@postgres-users:5432/users_db?schema=public
+    depends_on:
+      postgres-users: { condition: service_healthy }
 
 volumes:
   postgres-users-data:
