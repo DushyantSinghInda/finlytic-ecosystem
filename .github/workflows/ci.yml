@@ -14,6 +14,21 @@ jobs:
       # prisma generate never connects — this only satisfies env('DATABASE_URL')
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
 
+    services:
+      postgres-test:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: test_svc
+          POSTGRES_PASSWORD: test_dev_pass
+          POSTGRES_DB: email_test
+        ports:
+          - 5435:5432
+        options: >-
+          --health-cmd "pg_isready -U test_svc -d email_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v7
 
