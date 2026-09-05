@@ -21,11 +21,11 @@ RUN npm run build -w packages/auth-lib
 
 COPY services/email-ingestion services/email-ingestion
 
-# Prisma 7 emits plain TypeScript into src/generated/prisma, which is gitignored and
-# so absent from the context. It must exist BEFORE nest build compiles it.
-# Nothing connects here — prisma.config.ts only needs the variable to resolve.
-ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
-RUN npm run prisma:generate -w services/email-ingestion
+# Scoped to this one command — an ENV would persist into every stage built FROM builder,
+# including the migrator, where a missing compose value would silently point it at
+# localhost inside its own container.
+RUN DATABASE_URL=postgresql://build:build@localhost:5432/build \
+    npm run prisma:generate -w services/email-ingestion
 RUN npm run build -w services/email-ingestion
 
 
@@ -49,3 +49,9 @@ EXPOSE 3002
 # One image, two roles — the worker overrides this with dist/main.worker.js. Identical
 # code and identical dependencies, so the API and the worker cannot drift apart.
 CMD ["node", "services/email-ingestion/dist/main.js"]
+
+FROM builder AS migrator
+WORKDIR /app
+# Through the workspace script, not a bare `prisma migrate deploy` — the Prisma 7 CLI
+# discovers prisma.config.ts from cwd, and cwd here is /app.
+CMD ["npm", "run", "prisma:deploy", "-w", "services/email-ingestion"]

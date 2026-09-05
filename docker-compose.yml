@@ -71,6 +71,7 @@ services:
     build:
       context: .
       dockerfile: services/email-ingestion/Dockerfile
+      target: runtime
     image: finlytic/email-ingestion:dev
     container_name: finlytic-email-api
     restart: unless-stopped
@@ -95,6 +96,7 @@ services:
       postgres-email: { condition: service_healthy }
       redis: { condition: service_healthy }
       minio: { condition: service_healthy }
+      email-ingestion-migrate: { condition: service_completed_successfully }
     healthcheck:
       test:
         [
@@ -112,6 +114,7 @@ services:
     build:
       context: .
       dockerfile: services/email-ingestion/Dockerfile
+      target: runtime
     image: finlytic/email-ingestion:dev
     container_name: finlytic-email-worker
     restart: unless-stopped
@@ -132,6 +135,23 @@ services:
       postgres-email: { condition: service_healthy }
       redis: { condition: service_healthy }
       minio: { condition: service_healthy }
+      email-ingestion-migrate: { condition: service_completed_successfully }
+
+  email-ingestion-migrate:
+    build:
+      context: .
+      dockerfile: services/email-ingestion/Dockerfile
+      target: migrator
+    image: finlytic/email-ingestion-migrate:dev
+    container_name: finlytic-email-migrate
+    # A job, not a service. Run once, exit, stay exited.
+    restart: "no"
+    # Deliberately NO env_file — a migrator has no business holding the encryption key
+    # or the OAuth client secrets. It needs exactly one variable.
+    environment:
+      DATABASE_URL: postgresql://email_svc:email_dev_pass@postgres-email:5432/email_db?schema=public
+    depends_on:
+      postgres-email: { condition: service_healthy }
 
 volumes:
   postgres-users-data:
