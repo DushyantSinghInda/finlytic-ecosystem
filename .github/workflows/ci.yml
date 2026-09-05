@@ -50,3 +50,21 @@ jobs:
 
       - name: Lint
         run: npm run lint:all
+
+      - name: Unit tests
+        run: npm test -w services/email-ingestion
+
+      - name: Create the second test database
+        env:
+          PGPASSWORD: test_dev_pass
+        run: psql -h localhost -p 5435 -U test_svc -d email_test -c "CREATE DATABASE users_test OWNER test_svc;"
+
+      - name: Migrate the test databases
+        run: |
+          DATABASE_URL="postgresql://test_svc:test_dev_pass@localhost:5435/email_test?schema=public" npm run prisma:deploy -w services/email-ingestion
+          DATABASE_URL="postgresql://test_svc:test_dev_pass@localhost:5435/users_test?schema=public" npm run prisma:deploy -w services/user-management
+
+      - name: Integration tests
+        run: |
+          npm run test:int -w services/email-ingestion
+          npm run test:int -w services/user-management
