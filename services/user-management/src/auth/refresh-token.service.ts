@@ -21,7 +21,7 @@ export class RefreshTokenService {
 	constructor(
 		private readonly prisma: PrismaService,
 		private readonly configService: ConfigService,
-	) {}
+	) { }
 
 	private fingerprint(rawToken: string): string {
 		return createHash('sha256').update(rawToken).digest('hex');
@@ -63,7 +63,7 @@ export class RefreshTokenService {
 		const now = new Date();
 
 		const { count } = await this.prisma.refreshToken.updateMany({
-			where: { tokenHash, revokedAt: null, expiresAt: { gt: now } },
+			where: { tokenHash, expiresAt: { gt: now } },
 			data: { revokedAt: now },
 		});
 
