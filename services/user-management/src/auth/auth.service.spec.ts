@@ -13,8 +13,8 @@ import type { UsersService } from '../users/users.service';
 jest.mock('argon2', () => {
 	const actual = jest.requireActual<typeof import('argon2')>('argon2');
 
-	// hash stays REAL: the register test is also our proof that the native
-	// module builds and the 19 MiB cost is really applied.
+	// hash stays real: the register test doubles as a check that the native
+	// module builds and the 19 MiB cost is applied.
 	return { ...actual, verify: jest.fn() };
 });
 
@@ -81,8 +81,8 @@ function buildHarness() {
 }
 
 describe('AuthService.login', () => {
-	// One real argon2 hash for the decoy, not one per test — this suite was
-	// spending 15 seconds re-deriving the same throwaway value.
+	// One real argon2 hash for the decoy rather than one per test; per-test cost
+	// about 15 seconds to re-derive the same throwaway value.
 	const harness = buildHarness();
 	const verifiedAgainst: string[] = [];
 
@@ -163,7 +163,7 @@ describe('AuthService.login', () => {
 			ipAddress: '127.0.0.1',
 		});
 
-		// The mapper is the only thing standing between the row and the wire.
+		// The mapper is the only thing between the row and the response.
 		expect(JSON.stringify(session)).not.toContain('argon2');
 	});
 });
@@ -191,7 +191,7 @@ describe('AuthService.register', () => {
 		expect(storedHash).toContain('t=2');
 		expect(storedHash).toContain('p=1');
 
-		// The real verify — the module mock only replaced it for the login tests.
+		// The real verify; the module mock replaced it only for the login tests.
 		const realArgon2 = jest.requireActual<typeof import('argon2')>('argon2');
 		await expect(realArgon2.verify(storedHash, PASSWORD)).resolves.toBe(true);
 

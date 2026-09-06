@@ -35,7 +35,7 @@ function buildHarness(options: {
 		syncCursor: options.syncCursor ?? null,
 	} as unknown as MailAccount;
 
-	// Ordered logs of what the service recorded — progress is what we assert on.
+	// Ordered logs of what the service recorded; the assertions are about progress.
 	const cursorWrites: (string | null)[] = [];
 	const errorWrites: (string | null)[] = [];
 	const ingested: string[] = [];
@@ -78,7 +78,7 @@ function buildHarness(options: {
 
 	const ingestion = {
 		ingest: jest.fn((_acct: MailAccount, raw: RawMessage) => {
-			// Delete the null guard in ingestAll and this is what fires.
+			// Fires if the null guard in ingestAll is removed.
 			if (!raw) {
 				throw new Error('ingest() called with no message');
 			}
@@ -125,7 +125,7 @@ describe('MailSyncService', () => {
 		expect(harness.ingested).toEqual(['m1', 'm3']);
 		expect(outcome.gone).toBe(1);
 		expect(outcome.created).toBe(2);
-		// The decisive assertion: the run reached the end and recorded progress.
+		// The run reached the end and recorded progress.
 		expect(harness.cursorWrites).toEqual(['cursor-2']);
 	});
 
@@ -228,10 +228,10 @@ describe('MailSyncService', () => {
 			'403 quota exceeded',
 		);
 
-		// Real work happened...
+		// Work happened.
 		expect(harness.ingested).toEqual(['m1']);
-		// ...and none of it was recorded. The retry redoes it, cheaply, thanks to
-		// the pre-filter two tests up.
+		// None of it was recorded. The retry redoes it cheaply because of the
+		// pre-fetch filter.
 		expect(harness.cursorWrites).toEqual([]);
 		expect(harness.errorWrites).toEqual(['403 quota exceeded']);
 	});

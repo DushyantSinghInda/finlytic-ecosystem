@@ -11,9 +11,8 @@ function decodeSegment(segment: string): unknown {
 	return JSON.parse(Buffer.from(segment, 'base64url').toString('utf8'));
 }
 
-// Parsing PEM per request costs 2.2x the verification itself (0.038ms vs
-// 0.017ms measured). Keyed by the PEM so a different config re-parses — which
-// is what lets the tests hand in their own key pair.
+// Parsing the PEM costs 0.038ms against 0.017ms for the verification itself, so
+// the parsed key is held. Keyed by the PEM text, so a different config re-parses.
 let cached: { pem: string; key: KeyObject } | undefined;
 
 function publicKeyFor(pem: string): KeyObject {
@@ -37,14 +36,15 @@ export function verifyAccessToken(
 	const [headerSegment, payloadSegment, signatureSegment] = parts;
 	const header = decodeSegment(headerSegment) as { alg?: string };
 
-	// Pinned from OUR config, never read from the token. This single line is
-	// what stops alg:"none" and RS256->HS256 confusion.
+	// The algorithm comes from config, never from the token. Without this,
+	// alg:"none" verifies an empty signature, and alg:"HS256" makes the RSA
+	// public key usable as an HMAC secret — it is public, so anyone could sign.
 	if (header.alg !== 'RS256') {
 		throw new TokenError(`Unexpected alg: ${String(header.alg)}`);
 	}
 
-	// The signature covers the raw `header.payload` ASCII exactly as it arrived.
-	// Re-serialising the parsed objects would produce different bytes.
+	// The signature covers the raw `header.payload` ASCII as it arrived.
+	// Re-serialising the parsed objects produces different bytes.
 	const signed = Buffer.from(`${headerSegment}.${payloadSegment}`, 'ascii');
 
 	const signatureValid = verify(
@@ -58,7 +58,7 @@ export function verifyAccessToken(
 		throw new TokenError('Signature verification failed');
 	}
 
-	// Only now is the payload worth reading.
+	// Claims are only trustworthy once the signature checks out.
 	const payload = decodeSegment(payloadSegment) as Partial<AccessTokenPayload>;
 	const now = Math.floor(Date.now() / 1000);
 

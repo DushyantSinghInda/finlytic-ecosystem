@@ -35,7 +35,8 @@ export class AccountsService {
 			(scope) => !tokens.scopes.includes(scope),
 		);
 
-		// Throw BEFORE the upsert — a partial grant must not overwrite a working account.
+		// Thrown before the upsert: a partial grant must not overwrite an account
+		// that still works.
 		if (missing.length) {
 			this.logger.warn(
 				`User ${userId} completed ${provider} consent without: ${missing.join(', ')}`,

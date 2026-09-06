@@ -51,9 +51,9 @@ describe('matchRoute', () => {
 	}
 
 	it('keeps the OAuth callback public', () => {
-		// Not a duplicate of the table above — this one states WHY. The callback
-		// is a browser redirect from the provider with no Authorization header,
-		// so requiring a token here breaks connecting a mailbox.
+		// The callback is a browser redirect from the provider with no
+		// Authorization header, so requiring a token here breaks connecting
+		// a mailbox.
 		assert.equal(
 			matchRoute(routes, '/oauth/zoho/callback')?.requiresAuth,
 			false,

@@ -10,16 +10,16 @@ const TEST_DATABASE_URL =
 	process.env.TEST_DATABASE_URL ??
 	'postgresql://test_svc:test_dev_pass@localhost:5435/email_test?schema=public';
 
-// This suite deletes rows. The guard is what stands between a mistyped URL and
-// the development database.
+// This suite deletes rows, so a mistyped URL must not be able to reach the
+// development database.
 if (!TEST_DATABASE_URL.includes('_test')) {
 	throw new Error(
 		`Refusing to run integration tests against ${TEST_DATABASE_URL}`,
 	);
 }
 
-// MinIO is not under test. Faking it means a red test is always a database
-// problem — one piece of real infrastructure at a time.
+// MinIO is not under test. Faking it keeps a failure here pointing at the
+// database rather than at storage.
 const put = jest.fn(() => Promise.resolve('etag'));
 
 const storage = {
@@ -77,7 +77,8 @@ describe('MessageIngestionService against Postgres', () => {
 	});
 
 	afterAll(async () => {
-		// The shared-container tax, paid explicitly. Messages cascade.
+		// The test database is shared, so the suite cleans up after itself.
+		// Messages cascade from the account.
 		await prisma.mailAccount.deleteMany({ where: { userId } });
 		await prisma.$disconnect();
 	});
@@ -104,8 +105,8 @@ describe('MessageIngestionService against Postgres', () => {
 
 		expect(rows).toBe(1);
 
-		// Two uploads, not four: the raw blob and the body text, from the first
-		// ingest only. Idempotency has to save the upload, not just the row.
+		// Two uploads, not four: raw blob and body text from the first ingest
+		// only. The second ingest has to skip the upload, not just the row.
 		expect(put).toHaveBeenCalledTimes(2);
 	});
 

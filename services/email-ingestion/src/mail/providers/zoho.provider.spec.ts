@@ -139,7 +139,7 @@ describe('ZohoProvider region allowlist', () => {
 			),
 		).rejects.toThrow('Unknown Zoho data centre');
 
-		// The half that matters: the access token never left the process.
+		// The access token never leaves the process.
 		expect(fetchSpy).not.toHaveBeenCalled();
 	});
 

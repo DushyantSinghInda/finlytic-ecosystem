@@ -66,8 +66,8 @@ export interface ProviderProfile {
 export interface MailProviderAdapter {
 	readonly provider: MailProvider;
 	/**
-	 * Scopes the service cannot function without, in the exact form the provider
-	 * RETURNS them — not necessarily the form we request. Google turns a request
+	 * Scopes the service cannot function without, in the form the provider
+	 * returns them, which is not always the form requested. Google turns a request
 	 * for 'email' into 'https://www.googleapis.com/auth/userinfo.email'.
 	 */
 	readonly requiredScopes: string[];

@@ -43,6 +43,9 @@ export function createGatewayServer(config: GatewayConfig): Server {
 
 				verifyAccessToken(token, config);
 			} catch (error) {
+				// Rejected here so the upstream is never asked. On success the
+				// Authorization header is still forwarded and the service verifies
+				// it again: this check is defence in depth, not the control.
 				console.warn(`[gateway] 401 ${pathname}: ${(error as Error).message}`);
 				json(res, 401, { statusCode: 401, message: 'Invalid token' });
 				return;

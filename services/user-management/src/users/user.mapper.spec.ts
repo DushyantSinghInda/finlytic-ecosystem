@@ -15,9 +15,9 @@ describe('toPublicUser', () => {
 
 		const publicUser = toPublicUser(user);
 
-		// An allowlist, asserted exactly. A field added to the Prisma model
-		// cannot leak through here without this test going red first — which
-		// is the whole reason the mapper exists instead of `delete user.passwordHash`.
+		// An allowlist, asserted exactly: a field added to the Prisma model cannot
+		// reach a response without this test failing first. That is why the mapper
+		// builds a new object instead of deleting fields from the row.
 		expect(Object.keys(publicUser).sort()).toEqual([
 			'createdAt',
 			'email',

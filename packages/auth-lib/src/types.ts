@@ -1,8 +1,8 @@
 import type { AuthenticatedUser } from '@finlytic/shared-types';
 
-// Re-exported so both services keep importing these from '@finlytic/auth-lib'
-// exactly as they do today. A future consumer that only needs the token SHAPE
-// can depend on @finlytic/shared-types directly and skip Nest and Express.
+// Re-exported so consumers can keep importing the token types from here.
+// Anything that needs only the token shape can depend on @finlytic/shared-types
+// directly and avoid Nest and Express entirely.
 export * from '@finlytic/shared-types';
 
 export interface AuthLibOptions {

@@ -33,7 +33,8 @@ export class MailProviderRegistry {
 		const provider = isKnown ? (key as MailProvider) : undefined;
 		const adapter = provider && this.adapters.get(provider);
 
-		// The enum knows about ZOHO before the code does — the map is the real gate.
+		// The enum can name a provider before an adapter exists for it, so the map
+		// is what decides.
 		if (!provider || !adapter) {
 			throw new NotFoundException(`Unknown mail provider '${slug}'`);
 		}

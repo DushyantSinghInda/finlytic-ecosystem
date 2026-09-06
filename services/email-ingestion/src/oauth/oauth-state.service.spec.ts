@@ -31,8 +31,8 @@ describe('OAuthStateService', () => {
 			}),
 		).toString('base64url');
 
-		// The entire job of state: the callback arrives from the user's browser,
-		// so the payload has to prove we issued it.
+		// The callback arrives from the user's browser, so the payload has to
+		// prove this service issued it.
 		expect(() => service.verify(`${forged}.${signature}`)).toThrow(
 			'Invalid OAuth state',
 		);
@@ -42,8 +42,8 @@ describe('OAuthStateService', () => {
 		const service = buildService();
 		const [payload] = service.issue('user-1').split('.');
 
-		// timingSafeEqual THROWS on a length mismatch. The explicit length check
-		// is what turns a 500 into a 401.
+		// timingSafeEqual throws on a length mismatch, so the explicit length
+		// check is what keeps this a 401 rather than a 500.
 		expect(() => service.verify(`${payload}.abc`)).toThrow(
 			'Invalid OAuth state',
 		);

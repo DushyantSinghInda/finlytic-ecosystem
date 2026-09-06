@@ -4,8 +4,8 @@ import { createHmac, createSign, generateKeyPairSync } from 'node:crypto';
 import { TokenError, verifyAccessToken } from './jwt.ts';
 import type { GatewayConfig } from './config.ts';
 
-// Our own key pair: no fixtures, no dependency on the running stack, and the
-// private half lets this suite forge tokens that a real attacker would.
+// Generated here, so the suite needs no fixtures and no running stack. Holding
+// the private half is what lets it forge the tokens an attacker would send.
 const { privateKey, publicKey } = generateKeyPairSync('rsa', {
 	modulusLength: 2048,
 });
@@ -67,7 +67,7 @@ describe('verifyAccessToken', () => {
 	it('rejects alg:none with an empty signature', () => {
 		const forged = `${segment({ alg: 'none', typ: 'JWT' })}.${segment(claims())}.`;
 
-		// Delete the alg pin and this token authenticates as anyone.
+		// Without the alg pin this token authenticates as anyone.
 		assert.throws(() => verifyAccessToken(forged, config), TokenError);
 	});
 
@@ -77,8 +77,8 @@ describe('verifyAccessToken', () => {
 			.update(input)
 			.digest('base64url');
 
-		// Algorithm confusion, executed. The "secret" here is the PUBLIC key,
-		// which anyone can read — that is what makes this attack fatal.
+		// Algorithm confusion: the HMAC secret here is the public key, which
+		// anyone can read.
 		assert.throws(
 			() => verifyAccessToken(`${input}.${signature}`, config),
 			TokenError,

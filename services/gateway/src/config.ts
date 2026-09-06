@@ -20,9 +20,9 @@ function required(name: string): string {
 }
 
 export function loadConfig(): GatewayConfig {
-	// Fail at boot, not on the first request — the job the zod schemas do in the
-	// Nest services, in nine lines and no dependency. Reading the key here also
-	// means a wrong path is a startup crash, not a 500 an hour later.
+	// Read and validated here so a bad value fails at boot rather than on the
+	// first request that needs it. A wrong key path is a startup crash, not a
+	// 500 an hour later.
 	return {
 		port: Number(process.env.PORT ?? 3000),
 		publicKey: readFileSync(required('JWT_PUBLIC_KEY_PATH'), 'utf8'),

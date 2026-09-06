@@ -49,8 +49,8 @@ function listen(server: Server): Promise<number> {
 }
 
 function close(server: Server): Promise<void> {
-	// closeAllConnections FIRST: fetch keeps sockets alive, and server.close()
-	// waits for them, so without this the test process hangs after the last test.
+	// closeAllConnections runs first: fetch keeps sockets alive and close() waits
+	// for them, so without it the runner hangs after the last test.
 	server.closeAllConnections();
 
 	return new Promise((resolve) => {
@@ -58,8 +58,8 @@ function close(server: Server): Promise<void> {
 	});
 }
 
-// Self-contained on purpose: this suite mints its own tokens rather than sharing
-// a helper with jwt.test.ts, so each file can be read and run on its own.
+// Tokens are minted here rather than shared with jwt.test.ts so each file runs
+// on its own.
 const { privateKey, publicKey } = generateKeyPairSync('rsa', {
 	modulusLength: 2048,
 });
@@ -150,7 +150,7 @@ describe('gateway end to end', () => {
 		const response = await fetch(`${base}/users/me`);
 
 		assert.equal(response.status, 401);
-		// The assertion that matters: the upstream never saw it.
+		// The upstream never saw the request.
 		assert.equal(userLog.length, before);
 	});
 
@@ -173,8 +173,7 @@ describe('gateway end to end', () => {
 			`${base}/oauth/gmail/callback?code=abc&state=xyz`,
 		);
 
-		// The provider's redirect carries no Authorization header. This is the
-		// end-to-end version of that constraint.
+		// The provider's redirect carries no Authorization header.
 		assert.equal(response.status, 200);
 		assert.equal(
 			emailLog.at(-1)?.url,
@@ -188,7 +187,7 @@ describe('gateway end to end', () => {
 
 		// The service verifies independently, so the header must survive the hop.
 		assert.equal(received?.headers.authorization, auth.authorization);
-		// ...but Host is the upstream's, not the gateway's.
+		// Host is the upstream's, not the gateway's.
 		assert.notEqual(received?.headers.host, new URL(base).host);
 	});
 
@@ -211,7 +210,7 @@ describe('gateway end to end', () => {
 	});
 
 	it('returns 502 when the upstream is unreachable', async () => {
-		// Last in the file on purpose — it closes a stub the others depend on.
+		// Runs last: it closes a stub the other tests depend on.
 		await close(emailStub);
 
 		const response = await fetch(`${base}/accounts`, { headers: auth });

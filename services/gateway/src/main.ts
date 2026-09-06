@@ -8,8 +8,8 @@ server.listen(config.port, () => {
 	console.log(`[gateway] listening on http://127.0.0.1:${config.port}`);
 });
 
-// Nest does this for you. Without it, docker stop waits the full 10s timeout
-// and then kills the process, which looks like a hang rather than a shutdown.
+// Without these handlers `docker stop` waits the full 10s timeout before
+// killing the process, which looks like a hang rather than a shutdown.
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 	process.on(signal, () => {
 		console.log(`[gateway] ${signal} received, closing`);

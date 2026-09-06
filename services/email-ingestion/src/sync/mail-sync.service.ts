@@ -84,8 +84,8 @@ export class MailSyncService {
 		connection: ProviderConnection,
 		adapter: MailProviderAdapter,
 	): Promise<SyncOutcome> {
-		// Capture the cursor BEFORE fetching, so mail arriving mid-sync is
-		// picked up next run instead of falling into the gap.
+		// The cursor is captured before fetching, so mail that arrives mid-sync is
+		// picked up on the next run instead of falling into a gap.
 		const profile = await adapter.getProfile(connection);
 
 		const page = await adapter.listMessageIds(connection, {
@@ -169,7 +169,8 @@ export class MailSyncService {
 		skipped: number;
 		gone: number;
 	}> {
-		// The dedupe check must sit BEFORE the fetch. After it, the quota is already spent.
+		// The dedupe check sits before the fetch: afterwards the provider quota has
+		// already been spent.
 		const stored = await this.prisma.message.findMany({
 			where: { accountId: account.id, providerMessageId: { in: messageIds } },
 			select: { providerMessageId: true },

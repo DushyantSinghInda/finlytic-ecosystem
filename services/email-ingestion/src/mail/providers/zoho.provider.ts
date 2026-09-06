@@ -21,9 +21,9 @@ import type {
 } from './mail-provider.interface';
 
 /**
- * Zoho runs independent data centres. A refresh token issued by one is worthless
- * at another. This map is also the ALLOWLIST — `location` arrives via a browser
- * redirect, so it must select a known row, never construct a URL.
+ * Zoho runs independent data centres and a refresh token issued by one is
+ * worthless at another. This map doubles as the allowlist: `location` arrives on
+ * a browser redirect, so it selects a known row and never builds a URL.
  */
 const DATA_CENTRES: Record<string, { accounts: string; mail: string }> = {
 	us: { accounts: 'https://accounts.zoho.com', mail: 'https://mail.zoho.com' },
@@ -50,7 +50,7 @@ interface ZohoTokenResponse {
 	expires_in?: number;
 	scope?: string;
 	api_domain?: string;
-	/** Zoho reports OAuth failures in the BODY of a 200 response. */
+	/** Zoho reports OAuth failures in the body of a 200 response. */
 	error?: string;
 }
 
@@ -143,15 +143,15 @@ export class ZohoProvider implements MailProviderAdapter {
 		return `${home}/oauth/v2/auth?${params.toString()}`;
 	}
 
-	/** Never build a URL from the callback — look the region up in the table. */
+	/** Resolves a region against the table rather than building a URL from it. */
 	private resolveLocation(location?: string): {
 		key: string;
 		accounts: string;
 		mail: string;
 	} {
-		// No default. An unknown region must fail loudly — guessing it stores a
-		// routing decision that was never discovered, and the account still
-		// "connects" while being permanently pointed at the wrong data centre.
+		// No default region. Guessing one stores a routing decision that was never
+		// discovered: the account connects successfully while pointing at the
+		// wrong data centre for good.
 		if (!location) {
 			throw new BadRequestException(
 				'Zoho did not return a location; start authorization at accounts.zoho.com',
@@ -222,7 +222,8 @@ export class ZohoProvider implements MailProviderAdapter {
 
 		const payload = (await response.json()) as ZohoTokenResponse;
 
-		// Zoho answers 200 OK with {"error":"invalid_code"} — response.ok lies.
+		// Zoho answers 200 OK with {"error":"invalid_code"}, so response.ok alone
+		// is not enough to tell success from failure.
 		if (!response.ok || payload.error || !payload.access_token) {
 			this.logger.error(
 				`Zoho token endpoint (${accountsDomain}) returned ${response.status}: ${payload.error ?? 'no access_token'}`,
@@ -266,8 +267,6 @@ export class ZohoProvider implements MailProviderAdapter {
 		};
 	}
 
-	// --- 7c-ii(b) ---
-
 	async getProfile(connection: ProviderConnection): Promise<ProviderProfile> {
 		const centre = this.resolveLocation(connection.metadata.location);
 		const identity = await this.fetchIdentity(
@@ -283,8 +282,9 @@ export class ZohoProvider implements MailProviderAdapter {
 
 		return {
 			emailAddress: identity.emailAddress,
-			// No history log. The cursor is a received-time watermark — and it must come
-			// from THEIR clock. Date.now() would let skew open a permanent gap.
+			// Zoho has no history log, so the cursor is a received-time watermark
+			// taken from Zoho's own clock. Date.now() would let clock skew open a
+			// permanent gap.
 			cursor: newest?.receivedTime ?? '0',
 		};
 	}

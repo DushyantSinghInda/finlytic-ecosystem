@@ -89,8 +89,8 @@ describe('RefreshTokenService against Postgres', () => {
 			where: { id: issued.record.id },
 		});
 
-		// Expiry is not theft. Revoking the family here would log a user out of
-		// every device for the crime of leaving a laptop shut too long.
+		// Expiry is not theft. Revoking the family here would log the user out of
+		// every device after a laptop was simply left closed too long.
 		expect(row?.revokedAt).toBeNull();
 	});
 

@@ -15,9 +15,9 @@ export function buildRoutes(config: GatewayConfig): Route[] {
 			target: config.emailIngestionUrl,
 			requiresAuth: true,
 		},
-		// Public on purpose: /oauth/:provider/callback is a browser redirect from
-		// Google or Zoho and carries no Authorization header. The service guards
-		// /authorize itself — the edge does not duplicate route-level policy.
+		// /oauth/:provider/callback arrives as a browser redirect from Google or
+		// Zoho with no Authorization header, so this prefix cannot require one.
+		// email-ingestion guards /authorize itself.
 		{ prefix: '/oauth', target: config.emailIngestionUrl, requiresAuth: false },
 	];
 }
@@ -26,7 +26,7 @@ export function matchRoute(
 	routes: Route[],
 	pathname: string,
 ): Route | undefined {
-	// Boundary matters: /authorization must NOT match the /auth route.
+	// Exact segment boundary, so /authorization does not match the /auth route.
 	return routes.find(
 		(route) =>
 			pathname === route.prefix || pathname.startsWith(`${route.prefix}/`),

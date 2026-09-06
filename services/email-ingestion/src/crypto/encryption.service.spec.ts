@@ -50,8 +50,8 @@ describe('EncryptionService', () => {
 	it('cannot read a row encrypted under a different key', () => {
 		const envelope = buildService().encrypt('token');
 
-		// A self-test round-trips perfectly under the WRONG key. Only a
-		// second key proves the key is load-bearing at all.
+		// A round trip succeeds under the wrong key too, so only a second key
+		// shows the key is load-bearing.
 		expect(() => buildService().decrypt(envelope)).toThrow();
 	});
 
