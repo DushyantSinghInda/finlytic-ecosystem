@@ -11,7 +11,9 @@ import type { SyncQueueService } from '../queue/sync-queue.service.js';
 const REQUIRED = ['ZohoMail.accounts.READ', 'ZohoMail.messages.READ'];
 
 function buildHarness() {
-	const upsert = jest.fn().mockResolvedValue({ id: 'acc-1' });
+	const upsert = jest
+		.fn<() => Promise<{ id: string }>>()
+		.mockResolvedValue({ id: 'acc-1' });
 	const encrypt = jest.fn(() => 'v1.enc');
 
 	const service = new AccountsService(

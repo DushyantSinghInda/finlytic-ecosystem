@@ -43,7 +43,9 @@ function buildHarness(options: {
 
 	const prisma = {
 		mailAccount: {
-			findUnique: jest.fn().mockResolvedValue(account),
+			findUnique: jest
+				.fn<() => Promise<MailAccount>>()
+				.mockResolvedValue(account),
 			update: jest.fn((args: { data: Record<string, unknown> }) => {
 				if ('syncCursor' in args.data) {
 					cursorWrites.push((args.data.syncCursor as string | null) ?? null);
@@ -70,7 +72,9 @@ function buildHarness(options: {
 	};
 
 	const accountTokens = {
-		getConnection: jest.fn().mockResolvedValue(connection),
+		getConnection: jest
+			.fn<() => Promise<ProviderConnection>>()
+			.mockResolvedValue(connection),
 	} as unknown as AccountTokenService;
 
 	const registry = {

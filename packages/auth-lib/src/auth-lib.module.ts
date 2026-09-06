@@ -3,9 +3,9 @@ import {
 	type DynamicModule,
 	type ModuleMetadata,
 } from '@nestjs/common';
-import type { AuthLibOptions } from './types';
 import { JwtModule } from '@nestjs/jwt';
-import { JwtAuthGuard } from './jwt-auth.guard';
+import type { AuthLibOptions } from './types.js';
+import { JwtAuthGuard } from './jwt-auth.guard.js';
 
 export interface AuthLibAsyncOptions extends Pick<ModuleMetadata, 'imports'> {
 	inject?: any[];

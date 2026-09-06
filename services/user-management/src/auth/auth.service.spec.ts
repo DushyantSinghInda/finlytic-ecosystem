@@ -25,26 +25,43 @@ function buildUser(overrides: Partial<User> = {}): User {
 
 function buildHarness(realHasher?: PasswordHasher) {
 	const hash = jest
-		.fn()
+		.fn<(plainText: string) => Promise<string>>()
 		.mockResolvedValue('$argon2id$v=19$m=19456,p=1,t=2$fake');
-	const verify = jest.fn().mockResolvedValue(false);
+	const verify = jest
+		.fn<(digest: string, plainText: string) => Promise<boolean>>()
+		.mockResolvedValue(false);
 	const passwordHasher = realHasher ?? { hash, verify };
 
-	const findByEmail = jest.fn().mockResolvedValue(null);
-	const findById = jest.fn().mockResolvedValue(null);
-	const create = jest.fn();
+	const findByEmail = jest
+		.fn<(email: string) => Promise<User | null>>()
+		.mockResolvedValue(null);
+	const findById = jest
+		.fn<(id: string) => Promise<User | null>>()
+		.mockResolvedValue(null);
+	const create =
+		jest.fn<(email: string, passwordHash: string) => Promise<User>>();
 
-	const startFamily = jest.fn().mockResolvedValue({
-		raw: 'refresh-raw',
-		record: { id: 'rt-1', familyId: 'fam-1' },
-	});
-	const issue = jest.fn().mockResolvedValue({
-		raw: 'refresh-new',
-		record: { id: 'rt-2' },
-	});
-	const spend = jest.fn().mockResolvedValue(null);
-	const linkReplacement = jest.fn().mockResolvedValue(undefined);
-	const revokeFamily = jest.fn().mockResolvedValue(undefined);
+	const startFamily = jest
+		.fn<
+			() => Promise<{ raw: string; record: { id: string; familyId: string } }>
+		>()
+		.mockResolvedValue({
+			raw: 'refresh-raw',
+			record: { id: 'rt-1', familyId: 'fam-1' },
+		});
+	const issue = jest
+		.fn<() => Promise<{ raw: string; record: { id: string } }>>()
+		.mockResolvedValue({
+			raw: 'refresh-new',
+			record: { id: 'rt-2' },
+		});
+	const spend = jest
+		.fn<
+			() => Promise<{ id: string; userId: string; familyId: string } | null>
+		>()
+		.mockResolvedValue(null);
+	const linkReplacement = jest.fn<() => Promise<void>>();
+	const revokeFamily = jest.fn<() => Promise<void>>();
 
 	const service = new AuthService(
 		{ findByEmail, findById, create } as unknown as UsersService,
