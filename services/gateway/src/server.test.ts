@@ -168,6 +168,30 @@ describe('gateway end to end', () => {
 		assert.equal(userLog.at(-1)?.body, payload);
 	});
 
+	it('rate limits repeated logins without forwarding them', async () => {
+		const before = userLog.length;
+		let last: Response | undefined;
+
+		// The login rule allows 5 a minute and an earlier test already spent one,
+		// so loop until the limiter answers rather than assuming a count.
+		for (let attempt = 0; attempt < 8; attempt += 1) {
+			last = await fetch(`${base}/auth/login`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: '{}',
+			});
+
+			if (last.status === 429) {
+				break;
+			}
+		}
+
+		assert.equal(last?.status, 429);
+		assert.ok(Number(last?.headers.get('retry-after')) > 0);
+		// Whatever got through stopped at the limit; the rest never reached it.
+		assert.ok(userLog.length - before <= 5);
+	});
+
 	it('lets the OAuth callback through with no token, query string intact', async () => {
 		const response = await fetch(
 			`${base}/oauth/gmail/callback?code=abc&state=xyz`,

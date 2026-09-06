@@ -5,6 +5,7 @@ import { TokenError, verifyAccessToken } from './jwt.ts';
 import { buildRoutes, matchRoute } from './routes.ts';
 import { proxy } from './proxy.ts';
 import type { GatewayConfig } from './config.ts';
+import { createRateLimiter, WINDOW_MS } from './rate-limit.ts';
 
 function bearerToken(req: IncomingMessage): string | null {
 	const header = req.headers.authorization;
@@ -19,6 +20,12 @@ function bearerToken(req: IncomingMessage): string | null {
 export function createGatewayServer(config: GatewayConfig): Server {
 	const routes = buildRoutes(config);
 
+	const limiter = createRateLimiter();
+
+	// unref: a bare interval keeps the event loop alive, which would stop the
+	// test runner exiting and make docker stop wait for the timer.
+	setInterval(() => limiter.prune(), WINDOW_MS).unref();
+
 	return createServer((req, res) => {
 		if (req.method === 'GET' && req.url === '/health') {
 			json(res, 200, { status: 'ok', service: 'gateway' });
@@ -26,6 +33,26 @@ export function createGatewayServer(config: GatewayConfig): Server {
 		}
 
 		const pathname = new URL(req.url ?? '/', 'http://gateway.invalid').pathname;
+
+		// The socket address, never x-forwarded-for: this is the edge, so that
+		// header is caller-controlled and would let anyone reset their counter.
+		const client = req.socket.remoteAddress ?? 'unknown';
+		const decision = limiter.check(client, req.method ?? 'GET', pathname);
+
+		if (!decision.allowed) {
+			console.warn(
+				`[gateway] 429 ${req.method ?? 'GET'} ${pathname} from ${client}`,
+			);
+
+			json(
+				res,
+				429,
+				{ statusCode: 429, message: 'Too many requests' },
+				{ 'retry-after': String(decision.retryAfterSeconds) },
+			);
+			return;
+		}
+
 		const route = matchRoute(routes, pathname);
 
 		if (!route) {
