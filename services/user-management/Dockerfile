@@ -11,6 +11,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/shared-types/package.json packages/shared-types/
 COPY packages/auth-lib/package.json packages/auth-lib/
+COPY services/gateway/package.json services/gateway/
 COPY services/user-management/package.json services/user-management/
 COPY services/email-ingestion/package.json services/email-ingestion/
 RUN --mount=type=cache,target=/root/.npm,sharing=locked \
@@ -44,6 +45,7 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 COPY packages/shared-types/package.json packages/shared-types/
 COPY packages/auth-lib/package.json packages/auth-lib/
+COPY services/gateway/package.json services/gateway/
 COPY services/user-management/package.json services/user-management/
 COPY services/email-ingestion/package.json services/email-ingestion/
 RUN --mount=type=cache,target=/root/.npm,sharing=locked \

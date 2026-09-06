@@ -224,6 +224,46 @@ services:
     depends_on:
       postgres-users: { condition: service_healthy }
 
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+      target: runtime
+    image: finlytic/gateway:dev
+    container_name: finlytic-gateway
+    restart: unless-stopped
+    # Deliberately NO env_file — services/gateway/.env holds 127.0.0.1 URLs that
+    # are correct on the host and meaningless inside the network.
+    environment:
+      PORT: 3000
+      JWT_PUBLIC_KEY_PATH: /app/keys/jwt-public.pem
+      JWT_ISSUER: finlytic-user-management
+      JWT_AUDIENCE: finlytic
+      # Service names, and the ports the services actually LISTEN on. 3001/3002
+      # are unpublished here — they are container ports, not host mappings.
+      USER_MANAGEMENT_URL: http://user-management-api:3001
+      EMAIL_INGESTION_URL: http://email-ingestion-api:3002
+    volumes:
+      # Public key only. The gateway verifies; it never signs (rule 3).
+      - ./keys/jwt-public.pem:/app/keys/jwt-public.pem:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      user-management-api: { condition: service_healthy }
+      email-ingestion-api: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
 volumes:
   postgres-users-data:
   postgres-email-data:
