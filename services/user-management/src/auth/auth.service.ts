@@ -80,10 +80,9 @@ export class AuthService implements OnModuleInit {
 		let passwordMatches = false;
 
 		try {
-			passwordMatches = await argon2.verify(
-				user?.passwordHash ?? this.decoyHash,
-				dto.password,
-			);
+			passwordMatches = await argon2
+				.verify(user?.passwordHash ?? this.decoyHash, dto.password)
+				.catch(() => false);
 		} catch {
 			passwordMatches = false;
 		}
