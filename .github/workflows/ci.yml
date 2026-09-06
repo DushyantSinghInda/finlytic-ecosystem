@@ -52,7 +52,9 @@ jobs:
         run: npm run lint:all
 
       - name: Unit tests
-        run: npm test -w services/email-ingestion
+        run: |
+          npm test -w services/email-ingestion
+          npm test -w services/user-management
 
       - name: Create the second test database
         env:

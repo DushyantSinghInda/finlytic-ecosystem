@@ -35,7 +35,7 @@ describe('ZohoProvider.listChangedMessageIds', () => {
 		jest.restoreAllMocks();
 	});
 
-	// docs/01-commands.md §23 — a cursor with no log behind it
+	// Zoho has no history log — the cursor is a received-time watermark.
 	it('includes the message sitting exactly on the watermark', async () => {
 		mockZohoPage([
 			{ messageId: 'newer', receivedTime: '1000' },

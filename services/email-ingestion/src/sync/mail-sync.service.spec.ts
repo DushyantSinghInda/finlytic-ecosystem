@@ -101,7 +101,7 @@ function buildHarness(options: {
 }
 
 describe('MailSyncService', () => {
-	// docs/01-commands.md §21 — one deleted message froze the mailbox
+	// Regression: one deleted message froze an account's mailbox permanently.
 	it('skips a message the provider no longer has and finishes the run', async () => {
 		const fetched: string[] = [];
 
@@ -129,7 +129,7 @@ describe('MailSyncService', () => {
 		expect(harness.cursorWrites).toEqual(['cursor-2']);
 	});
 
-	// docs/01-commands.md §21 bug 2 — the retry storm
+	// Regression: the retry re-downloaded everything it had already stored.
 	it('never fetches an id that is already stored', async () => {
 		const fetched: string[] = [];
 
@@ -156,7 +156,7 @@ describe('MailSyncService', () => {
 		expect(outcome.skipped).toBe(2);
 	});
 
-	// docs/01-commands.md §18 — the gap that never closes
+	// Regression: the cursor captured after the work leaves a permanent gap.
 	it('captures the cursor before ingestion, not after', async () => {
 		const calls: string[] = [];
 		let providerCursor = 'before';
@@ -190,7 +190,7 @@ describe('MailSyncService', () => {
 		expect(harness.cursorWrites).toEqual(['before']);
 	});
 
-	// docs/01-commands.md §18 — an expired historyId is recoverable, not fatal
+	// Regression: an expired historyId is recoverable, not fatal.
 	it('re-baselines when the provider rejects the cursor', async () => {
 		const harness = buildHarness({
 			syncCursor: 'stale-history-id',
@@ -210,7 +210,7 @@ describe('MailSyncService', () => {
 		expect(harness.cursorWrites).toEqual([null, 'fresh']);
 	});
 
-	// docs/01-commands.md §21 — why the cursor stays all-or-nothing
+	// Regression: why the cursor advance stays all-or-nothing.
 	it('records no progress when the run throws part way', async () => {
 		const harness = buildHarness({
 			syncCursor: 'cursor-1',

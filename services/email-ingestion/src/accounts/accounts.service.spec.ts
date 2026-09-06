@@ -39,7 +39,7 @@ function connectResult(scopes: string[]): ConnectResult {
 	};
 }
 
-// docs/01-commands.md §20 — a partial grant that overwrote a working account
+// Regression: a partial scope grant overwrote a working account.
 describe('AccountsService.connect', () => {
 	it('stores the account when every required scope was granted', async () => {
 		const harness = buildHarness();
