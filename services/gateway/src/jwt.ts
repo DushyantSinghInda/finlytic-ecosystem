@@ -1,8 +1,11 @@
 import { createPublicKey, verify } from 'node:crypto';
-import type { AccessTokenPayload, AuthenticatedUser } from '@finlytic/shared-types';
+import type {
+	AccessTokenPayload,
+	AuthenticatedUser,
+} from '@finlytic/shared-types';
 import type { GatewayConfig } from './config.ts';
 
-export class TokenError extends Error { }
+export class TokenError extends Error {}
 
 function decodeSegment(segment: string): unknown {
 	return JSON.parse(Buffer.from(segment, 'base64url').toString('utf8'));

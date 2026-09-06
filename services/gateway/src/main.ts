@@ -25,7 +25,8 @@ const routes: Route[] = [
 
 function matchRoute(pathname: string): Route | undefined {
 	return routes.find(
-		(route) => pathname === route.prefix || pathname.startsWith(`${route.prefix}/`),
+		(route) =>
+			pathname === route.prefix || pathname.startsWith(`${route.prefix}/`),
 	);
 }
 

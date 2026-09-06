@@ -1,5 +1,9 @@
 import { request } from 'node:http';
-import type { IncomingHttpHeaders, IncomingMessage, ServerResponse } from 'node:http';
+import type {
+	IncomingHttpHeaders,
+	IncomingMessage,
+	ServerResponse,
+} from 'node:http';
 import { json } from './http.ts';
 
 /**
@@ -19,7 +23,9 @@ const HOP_BY_HOP = new Set([
 	'upgrade',
 ]);
 
-function forwardable(headers: IncomingHttpHeaders): Record<string, string | string[]> {
+function forwardable(
+	headers: IncomingHttpHeaders,
+): Record<string, string | string[]> {
 	const result: Record<string, string | string[]> = {};
 
 	for (const [name, value] of Object.entries(headers)) {
@@ -62,7 +68,10 @@ export function proxy(
 		(upstreamRes) => {
 			// Filter the response too — upstream sends its own hop-by-hop headers,
 			// and Node manages framing on this connection itself.
-			res.writeHead(upstreamRes.statusCode ?? 502, forwardable(upstreamRes.headers));
+			res.writeHead(
+				upstreamRes.statusCode ?? 502,
+				forwardable(upstreamRes.headers),
+			);
 			upstreamRes.pipe(res);
 		},
 	);
@@ -82,9 +91,12 @@ export function proxy(
 			return;
 		}
 
-		timedOut
-			? json(res, 504, { statusCode: 504, message: 'Upstream timed out' })
-			: json(res, 502, { statusCode: 502, message: 'Upstream unavailable' });
+		if (timedOut) {
+			json(res, 504, { statusCode: 504, message: 'Upstream timed out' });
+			return;
+		}
+
+		json(res, 502, { statusCode: 502, message: 'Upstream unavailable' });
 	});
 
 	// The client hung up — stop doing work on its behalf.
