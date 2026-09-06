@@ -111,8 +111,6 @@ services:
       # The FILE, not the directory. Mounting ./keys would hand the private
       # signing key to a service that must never possess it (rule 3).
       - ./keys/jwt-public.pem:/app/keys/jwt-public.pem:ro
-    ports:
-      - "3002:3002"
     depends_on:
       postgres-email: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -150,8 +148,6 @@ services:
       # public one alone — that asymmetry is architecture rule 3, made visible.
       - ./keys/jwt-private.pem:/app/keys/jwt-private.pem:ro
       - ./keys/jwt-public.pem:/app/keys/jwt-public.pem:ro
-    ports:
-      - "3001:3001"
     depends_on:
       postgres-users: { condition: service_healthy }
       user-management-migrate: { condition: service_completed_successfully }
