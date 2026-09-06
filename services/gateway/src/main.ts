@@ -4,31 +4,9 @@ import { loadConfig } from './config.ts';
 import { TokenError, verifyAccessToken } from './jwt.ts';
 import { json } from './http.ts';
 import { proxy } from './proxy.ts';
+import { buildRoutes, matchRoute } from './routes.ts';
 
 const config = loadConfig();
-
-interface Route {
-	prefix: string;
-	target: string;
-	requiresAuth: boolean;
-}
-
-const routes: Route[] = [
-	{ prefix: '/auth', target: config.userManagementUrl, requiresAuth: false },
-	{ prefix: '/users', target: config.userManagementUrl, requiresAuth: true },
-	{ prefix: '/accounts', target: config.emailIngestionUrl, requiresAuth: true },
-	// Public on purpose: /oauth/:provider/callback is a browser redirect from
-	// Google or Zoho and carries no Authorization header. The service guards
-	// /authorize itself — the edge does not duplicate route-level policy.
-	{ prefix: '/oauth', target: config.emailIngestionUrl, requiresAuth: false },
-];
-
-function matchRoute(pathname: string): Route | undefined {
-	return routes.find(
-		(route) =>
-			pathname === route.prefix || pathname.startsWith(`${route.prefix}/`),
-	);
-}
 
 function bearerToken(req: IncomingMessage): string | null {
 	const header = req.headers.authorization;
@@ -69,7 +47,9 @@ function handle(req: IncomingMessage, res: ServerResponse): void {
 	}
 
 	const pathname = new URL(req.url ?? '/', 'http://gateway.invalid').pathname;
-	const route = matchRoute(pathname);
+
+	const routes = buildRoutes(config);
+	const route = matchRoute(routes, pathname);
 
 	if (!route) {
 		json(res, 404, { statusCode: 404, message: 'Not found' });
