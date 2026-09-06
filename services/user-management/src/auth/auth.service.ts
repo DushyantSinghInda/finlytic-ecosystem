@@ -77,9 +77,7 @@ export class AuthService implements OnModuleInit {
 
 		// Always run one argon2 verification, even when no user exists,
 		// so the response time cannot reveal whether the email is registered.
-		let passwordMatches = false;
-
-		passwordMatches = await argon2
+		const passwordMatches = await argon2
 			.verify(user?.passwordHash ?? this.decoyHash, dto.password)
 			.catch(() => false);
 
