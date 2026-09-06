@@ -45,7 +45,7 @@
     "@prisma/client": "^7.10.0",
     "bullmq": "^6.2.0",
     "ioredis": "^6.0.0",
-    "mailparser": "^3.9.15",
+    "mailparser": "^3.9.20",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "zod": "^4.4.3"
