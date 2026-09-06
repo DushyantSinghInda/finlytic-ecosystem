@@ -72,6 +72,7 @@
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
+    "displayName": "user-management",
     "moduleFileExtensions": [
       "js",
       "json",

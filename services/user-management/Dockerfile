@@ -9,6 +9,7 @@ WORKDIR /app
 # npm ci checks the lockfile against EVERY workspace, so email-ingestion's manifest
 # is required even though it is never built here.
 COPY package.json package-lock.json ./
+COPY packages/shared-types/package.json packages/shared-types/
 COPY packages/auth-lib/package.json packages/auth-lib/
 COPY services/user-management/package.json services/user-management/
 COPY services/email-ingestion/package.json services/email-ingestion/
@@ -16,6 +17,10 @@ RUN --mount=type=cache,target=/root/.npm,sharing=locked \
     apk add --no-cache --virtual .build-deps python3 make g++ \
  && npm ci --fetch-retries=5 --fetch-retry-maxtimeout=120000 \
  && apk del .build-deps
+
+# shared-types first: auth-lib re-exports it, so tsc needs its .d.ts to exist.
+COPY packages/shared-types packages/shared-types
+RUN npm run build -w packages/shared-types
 
 # Services import auth-lib's compiled dist, so it is built first.
 COPY packages/auth-lib packages/auth-lib
@@ -36,6 +41,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY package.json package-lock.json ./
+COPY packages/shared-types/package.json packages/shared-types/
 COPY packages/auth-lib/package.json packages/auth-lib/
 COPY services/user-management/package.json services/user-management/
 COPY services/email-ingestion/package.json services/email-ingestion/
@@ -44,6 +50,9 @@ RUN --mount=type=cache,target=/root/.npm,sharing=locked \
  && npm ci --omit=dev --fetch-retries=5 --fetch-retry-maxtimeout=120000 \
  && apk del .build-deps
 
+# auth-lib's types.js does `require("@finlytic/shared-types")` at load time —
+# the manifest alone gives npm the symlink, but the symlink needs a target.
+COPY --from=builder /app/packages/shared-types/dist packages/shared-types/dist
 COPY --from=builder /app/packages/auth-lib/dist packages/auth-lib/dist
 COPY --from=builder /app/services/user-management/dist services/user-management/dist
 

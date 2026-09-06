@@ -7,15 +7,17 @@
 		"packages/*"
 	],
 	"scripts": {
+		"build:shared-types": "npm run build -w packages/shared-types",
 		"build:auth-lib": "npm run build -w packages/auth-lib",
-		"build:all": "npm run build:auth-lib && npm run build -w services/user-management && npm run build -w services/email-ingestion",
+		"build:all": "npm run build:shared-types && npm run build:auth-lib && npm run build -w services/user-management && npm run build -w services/email-ingestion",
 		"prisma:generate:all": "npm run prisma:generate -w services/user-management && npm run prisma:generate -w services/email-ingestion",
-		"lint:fix": "npm run lint -w packages/auth-lib && npm run lint -w services/user-management && npm run lint -w services/email-ingestion",
-		"lint:all": "npm run lint:ci -w packages/auth-lib && npm run lint:ci -w services/user-management && npm run lint:ci -w services/email-ingestion",
+		"lint:fix": "npm run lint -w packages/shared-types && npm run lint -w packages/auth-lib && npm run lint -w services/user-management && npm run lint -w services/email-ingestion",
+		"lint:all": "npm run lint:ci -w packages/shared-types && npm run lint:ci -w packages/auth-lib && npm run lint:ci -w services/user-management && npm run lint:ci -w services/email-ingestion",
 		"infra:up": "docker compose up -d",
 		"infra:down": "docker compose down",
 		"infra:reset": "docker compose down -v",
-		"infra:logs": "docker compose logs -f"
+		"infra:logs": "docker compose logs -f",
+		"test": "jest"
 	},
 	"engines": {
 		"node": ">=24"
