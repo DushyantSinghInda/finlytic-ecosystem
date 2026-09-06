@@ -20,7 +20,8 @@ RUN --mount=type=cache,target=/root/.npm,sharing=locked \
 COPY packages/shared-types packages/shared-types
 RUN npm run build -w packages/shared-types
 
-# Services import auth-lib's compiled dist, so it is built first.
+# Services import auth-lib's compiled dist, so it is built next — after the
+# contract it re-exports.
 COPY packages/auth-lib packages/auth-lib
 RUN npm run build -w packages/auth-lib
 
