@@ -79,13 +79,9 @@ export class AuthService implements OnModuleInit {
 		// so the response time cannot reveal whether the email is registered.
 		let passwordMatches = false;
 
-		try {
-			passwordMatches = await argon2
-				.verify(user?.passwordHash ?? this.decoyHash, dto.password)
-				.catch(() => false);
-		} catch {
-			passwordMatches = false;
-		}
+		passwordMatches = await argon2
+			.verify(user?.passwordHash ?? this.decoyHash, dto.password)
+			.catch(() => false);
 
 		if (!user || !passwordMatches || !user.isActive) {
 			const emailFingerprint = createHash('sha256')
