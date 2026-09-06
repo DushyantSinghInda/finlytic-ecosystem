@@ -65,7 +65,7 @@ EXPOSE 3001
 
 # Single role. The migrator stage below reuses the same builder, so the migration
 # runs against exactly the code this image was built from.
-CMD ["node", "services/user-management/dist/src/main.js"]
+CMD ["node", "services/user-management/dist/main.js"]
 
 FROM builder AS migrator
 WORKDIR /app
