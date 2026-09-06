@@ -3,9 +3,11 @@ import type { IncomingMessage, Server } from 'node:http';
 import { json } from './http.ts';
 import { TokenError, verifyAccessToken } from './jwt.ts';
 import { buildRoutes, matchRoute } from './routes.ts';
-import { proxy } from './proxy.ts';
+import { proxy, type ProxyContext } from './proxy.ts';
 import type { GatewayConfig } from './config.ts';
 import { createRateLimiter, WINDOW_MS } from './rate-limit.ts';
+import { randomBytes } from 'node:crypto';
+import { log } from './logger.ts';
 
 function bearerToken(req: IncomingMessage): string | null {
 	const header = req.headers.authorization;
@@ -27,12 +29,34 @@ export function createGatewayServer(config: GatewayConfig): Server {
 	setInterval(() => limiter.prune(), WINDOW_MS).unref();
 
 	return createServer((req, res) => {
+		const started = process.hrtime.bigint();
+		// 8 bytes is ample for correlating inside a log retention window, and a
+		// 36-character UUID in every line is mostly noise.
+		const context: ProxyContext = {
+			requestId: randomBytes(8).toString('hex'),
+		};
+		res.setHeader('x-request-id', context.requestId);
+
 		if (req.method === 'GET' && req.url === '/health') {
 			json(res, 200, { status: 'ok', service: 'gateway' });
 			return;
 		}
-
 		const pathname = new URL(req.url ?? '/', 'http://gateway.invalid').pathname;
+		let upstreamName = '-';
+
+		res.on('close', () => {
+			log('info', 'request', {
+				requestId: context.requestId,
+				method: req.method ?? 'GET',
+				// The pathname only. req.url carries the OAuth `code` on callbacks.
+				path: pathname,
+				status: res.statusCode,
+				durationMs: Number(process.hrtime.bigint() - started) / 1e6,
+				upstreamMs: context.upstreamMs ?? null,
+				upstream: upstreamName,
+				completed: res.writableFinished,
+			});
+		});
 
 		// The socket address, never x-forwarded-for: this is the edge, so that
 		// header is caller-controlled and would let anyone reset their counter.
@@ -40,9 +64,14 @@ export function createGatewayServer(config: GatewayConfig): Server {
 		const decision = limiter.check(client, req.method ?? 'GET', pathname);
 
 		if (!decision.allowed) {
-			console.warn(
-				`[gateway] 429 ${req.method ?? 'GET'} ${pathname} from ${client}`,
-			);
+			log('warn', 'rate limited', {
+				requestId: context.requestId,
+				method: req.method ?? 'GET',
+				path: pathname,
+				client,
+				limit: decision.limit,
+				retryAfterSeconds: decision.retryAfterSeconds,
+			});
 
 			json(
 				res,
@@ -73,12 +102,17 @@ export function createGatewayServer(config: GatewayConfig): Server {
 				// Rejected here so the upstream is never asked. On success the
 				// Authorization header is still forwarded and the service verifies
 				// it again: this check is defence in depth, not the control.
-				console.warn(`[gateway] 401 ${pathname}: ${(error as Error).message}`);
+				log('warn', 'token rejected', {
+					requestId: context.requestId,
+					path: pathname,
+					reason: (error as Error).message,
+				});
 				json(res, 401, { statusCode: 401, message: 'Invalid token' });
 				return;
 			}
 		}
 
-		proxy(req, res, route.target);
+		upstreamName = route.target;
+		proxy(req, res, route.target, context);
 	});
 }

@@ -5,6 +5,13 @@ import type {
 	ServerResponse,
 } from 'node:http';
 import { json } from './http.ts';
+import { log } from './logger.ts';
+
+export interface ProxyContext {
+	requestId: string;
+	/** Set by proxy(): time spent waiting on the upstream, in milliseconds. */
+	upstreamMs?: number;
+}
 
 /**
  * Hop-by-hop headers describe a single connection rather than the message, so
@@ -44,6 +51,7 @@ export function proxy(
 	req: IncomingMessage,
 	res: ServerResponse,
 	target: string,
+	context: ProxyContext,
 ): void {
 	const upstream = new URL(req.url ?? '/', target);
 	const headers = forwardable(req.headers);
@@ -53,7 +61,10 @@ export function proxy(
 	headers['x-forwarded-for'] = req.socket.remoteAddress ?? '';
 	headers['x-forwarded-proto'] = 'http';
 	headers['x-forwarded-host'] = req.headers.host ?? '';
+	// Minted at the edge, so a service log line can be joined to a gateway one.
+	headers['x-request-id'] = context.requestId;
 
+	const upstreamStarted = process.hrtime.bigint();
 	let timedOut = false;
 
 	const upstreamReq = request(
@@ -66,6 +77,9 @@ export function proxy(
 			headers,
 		},
 		(upstreamRes) => {
+			context.upstreamMs =
+				Number(process.hrtime.bigint() - upstreamStarted) / 1e6;
+
 			// The upstream sends its own hop-by-hop headers, and framing on this
 			// connection is Node's to manage.
 			res.writeHead(
@@ -82,7 +96,11 @@ export function proxy(
 	});
 
 	upstreamReq.on('error', (error) => {
-		console.error(`[gateway] ${target}${req.url ?? ''} -> ${error.message}`);
+		log('error', 'upstream request failed', {
+			requestId: context.requestId,
+			target,
+			error: error.message,
+		});
 
 		if (res.headersSent) {
 			// The status line has already gone out, so dropping the connection is

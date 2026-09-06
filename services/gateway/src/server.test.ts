@@ -233,6 +233,17 @@ describe('gateway end to end', () => {
 		assert.equal(userLog.length + emailLog.length, before);
 	});
 
+	it('mints a request id and ignores a caller-supplied one', async () => {
+		const response = await fetch(`${base}/users/me`, {
+			headers: { ...auth, 'x-request-id': 'client-controlled' },
+		});
+
+		const forwarded = userLog.at(-1)?.headers['x-request-id'];
+
+		assert.notEqual(forwarded, 'client-controlled');
+		assert.equal(response.headers.get('x-request-id'), forwarded);
+	});
+
 	it('returns 502 when the upstream is unreachable', async () => {
 		// Runs last: it closes a stub the other tests depend on.
 		await close(emailStub);
