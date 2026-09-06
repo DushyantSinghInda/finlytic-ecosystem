@@ -47,8 +47,9 @@ COPY packages/auth-lib/package.json packages/auth-lib/
 COPY services/user-management/package.json services/user-management/
 COPY services/email-ingestion/package.json services/email-ingestion/
 RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    --mount=type=cache,target=/root/.cache,sharing=locked \
     apk add --no-cache --virtual .build-deps python3 make g++ \
- && npm ci --omit=dev --fetch-retries=5 --fetch-retry-maxtimeout=120000 \
+ && npm ci --omit=dev --omit=optional --fetch-retries=5 --fetch-retry-maxtimeout=120000 \
  && apk del .build-deps
 
 # auth-lib's types.js does `require("@finlytic/shared-types")` at load time —
