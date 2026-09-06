@@ -6,6 +6,7 @@ import {
 } from './queue.constants.js';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { currentRequestId } from '../logging/request-context.js';
 
 @Injectable()
 export class SyncQueueService {
@@ -42,7 +43,11 @@ export class SyncQueueService {
 			this.logger.log(`Cleared ${state} job ${jobId} before re-queueing`);
 		}
 
-		await this.queue.add(SYNC_ACCOUNT_JOB, { accountId, reason }, { jobId });
+		await this.queue.add(
+			SYNC_ACCOUNT_JOB,
+			{ accountId, reason, requestId: currentRequestId() },
+			{ jobId },
+		);
 		this.logger.log(`Queued sync for account ${accountId} (${reason})`);
 
 		return { jobId, alreadyQueued: false };
