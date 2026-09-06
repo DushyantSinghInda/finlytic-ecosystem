@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { SyncQueueService } from './sync-queue.service';
+import { SyncQueueService } from './sync-queue.service.js';
 import { BullModule } from '@nestjs/bullmq';
-import { MAIL_SYNC_QUEUE } from './queue.constants';
+import { MAIL_SYNC_QUEUE } from './queue.constants.js';
 import { ConfigService } from '@nestjs/config';
 
 const bullRoot = BullModule.forRootAsync({

@@ -4,8 +4,8 @@ import {
 	JwtAuthGuard,
 	type AuthenticatedUser,
 } from '@finlytic/auth-lib';
-import { UsersService } from './users.service';
-import type { PublicUser } from './user.mapper';
+import { UsersService } from './users.service.js';
+import type { PublicUser } from './user.mapper.js';
 
 @Controller('users')
 export class UsersController {

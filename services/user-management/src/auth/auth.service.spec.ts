@@ -1,24 +1,11 @@
-import * as argon2 from 'argon2';
-import { AuthService } from './auth.service';
-import { Prisma } from '../generated/prisma/client';
+import { AuthService } from './auth.service.js';
+import { PasswordHasher } from './password-hasher.js';
+import { Prisma } from '../generated/prisma/client.js';
 import type { ConfigService } from '@nestjs/config';
-import type { RefreshTokenService } from './refresh-token.service';
-import type { TokenService } from './token.service';
-import type { User } from '../generated/prisma/client';
-import type { UsersService } from '../users/users.service';
-
-// jest.spyOn cannot work here: `import * as argon2` compiles to a namespace
-// copy whose properties are non-configurable getters. Replacing the module in
-// the registry is the only seam — and the service resolves the same module.
-jest.mock('argon2', () => {
-	const actual = jest.requireActual<typeof import('argon2')>('argon2');
-
-	// hash stays real: the register test doubles as a check that the native
-	// module builds and the 19 MiB cost is applied.
-	return { ...actual, verify: jest.fn() };
-});
-
-const verifyMock = argon2.verify as unknown as jest.Mock;
+import type { RefreshTokenService } from './refresh-token.service.js';
+import type { TokenService } from './token.service.js';
+import type { User } from '../generated/prisma/client.js';
+import type { UsersService } from '../users/users.service.js';
 
 const PASSWORD = 'correct-horse-battery-staple';
 
@@ -35,7 +22,13 @@ function buildUser(overrides: Partial<User> = {}): User {
 	};
 }
 
-function buildHarness() {
+function buildHarness(realHasher?: PasswordHasher) {
+	const hash = jest
+		.fn()
+		.mockResolvedValue('$argon2id$v=19$m=19456,p=1,t=2$fake');
+	const verify = jest.fn().mockResolvedValue(false);
+	const passwordHasher = realHasher ?? { hash, verify };
+
 	const findByEmail = jest.fn().mockResolvedValue(null);
 	const findById = jest.fn().mockResolvedValue(null);
 	const create = jest.fn();
@@ -65,6 +58,7 @@ function buildHarness() {
 			linkReplacement,
 			revokeFamily,
 		} as unknown as RefreshTokenService,
+		passwordHasher,
 	);
 
 	return {
@@ -77,18 +71,19 @@ function buildHarness() {
 		spend,
 		linkReplacement,
 		revokeFamily,
+		hash,
+		verify,
 	};
 }
 
 describe('AuthService.login', () => {
-	// One real argon2 hash for the decoy rather than one per test; per-test cost
-	// about 15 seconds to re-derive the same throwaway value.
+	// One harness for the suite; the injected hasher makes the decoy free.
 	const harness = buildHarness();
 	const verifiedAgainst: string[] = [];
 
 	function verifyReturns(result: boolean) {
-		verifyMock.mockImplementation((hash: string) => {
-			verifiedAgainst.push(hash);
+		harness.verify.mockImplementation((digest: string) => {
+			verifiedAgainst.push(digest);
 			return Promise.resolve(result);
 		});
 	}
@@ -116,7 +111,7 @@ describe('AuthService.login', () => {
 
 		// Without the decoy this is zero, and an unknown email answers in ~1ms
 		// while a known one takes ~60ms. That gap is a user-enumeration oracle.
-		expect(verifyMock).toHaveBeenCalledTimes(1);
+		expect(harness.verify).toHaveBeenCalledTimes(1);
 		expect(verifiedAgainst[0]).toMatch(/^\$argon2id\$/);
 	});
 
@@ -170,7 +165,10 @@ describe('AuthService.login', () => {
 
 describe('AuthService.register', () => {
 	it('stores a hash and never the password', async () => {
-		const harness = buildHarness();
+		// A real hasher here: this test doubles as the check that the native
+		// module builds and the 19 MiB cost is applied.
+		const hasher = new PasswordHasher();
+		const harness = buildHarness(hasher);
 		let storedHash = '';
 
 		harness.create.mockImplementation((email: string, passwordHash: string) => {
@@ -185,15 +183,10 @@ describe('AuthService.register', () => {
 
 		expect(storedHash).not.toContain(PASSWORD);
 		expect(storedHash).toMatch(/^\$argon2id\$v=19\$/);
-		// Pins the cost parameters, not just the algorithm: a silent drop to
-		// m=4096 would still verify and still look like argon2id.
 		expect(storedHash).toContain('m=19456');
 		expect(storedHash).toContain('t=2');
 		expect(storedHash).toContain('p=1');
-
-		// The real verify; the module mock replaced it only for the login tests.
-		const realArgon2 = jest.requireActual<typeof import('argon2')>('argon2');
-		await expect(realArgon2.verify(storedHash, PASSWORD)).resolves.toBe(true);
+		await expect(hasher.verify(storedHash, PASSWORD)).resolves.toBe(true);
 
 		expect(user).not.toHaveProperty('passwordHash');
 	});

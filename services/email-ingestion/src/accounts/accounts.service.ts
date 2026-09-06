@@ -4,14 +4,14 @@ import {
 	Logger,
 	NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { EncryptionService } from '../crypto/encryption.service';
-import { AccountStatus, MailProvider } from '../generated/prisma/client';
-import type { MailAccount } from '../generated/prisma/client';
-import type { ConnectResult } from '../mail/providers/mail-provider.interface';
-import { MailProviderRegistry } from '../mail/mail-provider.registry';
-import { AccountTokenService } from './account-token.service';
-import { SyncQueueService } from '../queue/sync-queue.service';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { EncryptionService } from '../crypto/encryption.service.js';
+import { AccountStatus, MailProvider } from '../generated/prisma/client.js';
+import type { MailAccount } from '../generated/prisma/client.js';
+import type { ConnectResult } from '../mail/providers/mail-provider.interface.js';
+import { MailProviderRegistry } from '../mail/mail-provider.registry.js';
+import { AccountTokenService } from './account-token.service.js';
+import { SyncQueueService } from '../queue/sync-queue.service.js';
 
 @Injectable()
 export class AccountsService {

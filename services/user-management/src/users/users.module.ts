@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from '../prisma/prisma.module';
-import { UsersService } from './users.service';
+import { PrismaModule } from '../prisma/prisma.module.js';
+import { UsersService } from './users.service.js';
 import { AuthLibModule } from '@finlytic/auth-lib';
 import { ConfigService } from '@nestjs/config';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { UsersController } from './users.controller';
+import { UsersController } from './users.controller.js';
 
 @Module({
 	imports: [

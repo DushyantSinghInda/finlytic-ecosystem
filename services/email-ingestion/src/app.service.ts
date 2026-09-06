@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from './prisma/prisma.service';
-import { EncryptionService } from './crypto/encryption.service';
-import { ObjectStorageService } from './storage/object-storage.service';
+import { PrismaService } from './prisma/prisma.service.js';
+import { EncryptionService } from './crypto/encryption.service.js';
+import { ObjectStorageService } from './storage/object-storage.service.js';
 
 @Injectable()
 export class AppService {

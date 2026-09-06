@@ -1,13 +1,13 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { EncryptionService } from '../crypto/encryption.service';
-import { MailProviderRegistry } from '../mail/mail-provider.registry';
-import { AccountStatus } from '../generated/prisma/client';
-import type { MailAccount } from '../generated/prisma/client';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { EncryptionService } from '../crypto/encryption.service.js';
+import { MailProviderRegistry } from '../mail/mail-provider.registry.js';
+import { AccountStatus } from '../generated/prisma/client.js';
+import type { MailAccount } from '../generated/prisma/client.js';
 import type {
 	ProviderConnection,
 	ProviderMetadata,
-} from '../mail/providers/mail-provider.interface';
+} from '../mail/providers/mail-provider.interface.js';
 
 const REFRESH_SKEW_MS = 5 * 60 * 1000;
 

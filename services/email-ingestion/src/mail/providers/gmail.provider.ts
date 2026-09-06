@@ -6,7 +6,7 @@ import {
 	UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { MailProvider } from '../../generated/prisma/client';
+import { MailProvider } from '../../generated/prisma/client.js';
 import type {
 	ConnectResult,
 	MailProviderAdapter,
@@ -17,7 +17,7 @@ import type {
 	ProviderIdentity,
 	ProviderProfile,
 	RawMessage,
-} from './mail-provider.interface';
+} from './mail-provider.interface.js';
 
 const AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';

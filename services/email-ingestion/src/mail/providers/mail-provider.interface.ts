@@ -1,4 +1,4 @@
-import type { MailProvider } from '../../generated/prisma/client';
+import type { MailProvider } from '../../generated/prisma/client.js';
 
 /** Opaque provider-specific context, persisted per account. */
 export type ProviderMetadata = Record<string, string>;

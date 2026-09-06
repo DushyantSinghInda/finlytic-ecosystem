@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { PrismaService } from '../src/prisma/prisma.service';
-import { RefreshTokenService } from '../src/auth/refresh-token.service';
+import { PrismaService } from '../src/prisma/prisma.service.js';
+import { RefreshTokenService } from '../src/auth/refresh-token.service.js';
 import type { ConfigService } from '@nestjs/config';
 
 const TEST_DATABASE_URL =

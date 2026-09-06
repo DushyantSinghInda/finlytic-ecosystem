@@ -1,14 +1,14 @@
-import { MailSyncService } from './mail-sync.service';
-import type { AccountTokenService } from '../accounts/account-token.service';
-import type { MailProviderRegistry } from '../mail/mail-provider.registry';
-import type { MessageIngestionService } from '../messages/message-ingestion.service';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { MailAccount } from '../generated/prisma/client';
+import { MailSyncService } from './mail-sync.service.js';
+import type { AccountTokenService } from '../accounts/account-token.service.js';
+import type { MailProviderRegistry } from '../mail/mail-provider.registry.js';
+import type { MessageIngestionService } from '../messages/message-ingestion.service.js';
+import type { PrismaService } from '../prisma/prisma.service.js';
+import type { MailAccount } from '../generated/prisma/client.js';
 import type {
 	MailProviderAdapter,
 	ProviderConnection,
 	RawMessage,
-} from '../mail/providers/mail-provider.interface';
+} from '../mail/providers/mail-provider.interface.js';
 
 const ACCOUNT_ID = 'acc-1';
 

@@ -1,5 +1,5 @@
-import { toPublicUser } from './user.mapper';
-import type { User } from '../generated/prisma/client';
+import { toPublicUser } from './user.mapper.js';
+import type { User } from '../generated/prisma/client.js';
 
 describe('toPublicUser', () => {
 	it('exposes five fields and no more', () => {

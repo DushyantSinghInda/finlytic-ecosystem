@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { MessageIngestionService } from '../src/messages/message-ingestion.service';
-import { PrismaService } from '../src/prisma/prisma.service';
+import { MessageIngestionService } from '../src/messages/message-ingestion.service.js';
+import { PrismaService } from '../src/prisma/prisma.service.js';
 import type { ConfigService } from '@nestjs/config';
-import type { MailAccount } from '../src/generated/prisma/client';
-import type { ObjectStorageService } from '../src/storage/object-storage.service';
-import type { RawMessage } from '../src/mail/providers/mail-provider.interface';
+import type { MailAccount } from '../src/generated/prisma/client.js';
+import type { ObjectStorageService } from '../src/storage/object-storage.service.js';
+import type { RawMessage } from '../src/mail/providers/mail-provider.interface.js';
 
 const TEST_DATABASE_URL =
 	process.env.TEST_DATABASE_URL ??

@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import type { User } from '../generated/prisma/client';
-import { type PublicUser, toPublicUser } from './user.mapper';
+import { PrismaService } from '../prisma/prisma.service.js';
+import type { User } from '../generated/prisma/client.js';
+import { type PublicUser, toPublicUser } from './user.mapper.js';
 
 @Injectable()
 export class UsersService {

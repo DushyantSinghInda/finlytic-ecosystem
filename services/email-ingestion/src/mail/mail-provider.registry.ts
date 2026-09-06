@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { MailProvider } from '../generated/prisma/client';
-import { GmailProvider } from './providers/gmail.provider';
-import type { MailProviderAdapter } from './providers/mail-provider.interface';
-import { ZohoProvider } from './providers/zoho.provider';
+import { MailProvider } from '../generated/prisma/client.js';
+import { GmailProvider } from './providers/gmail.provider.js';
+import type { MailProviderAdapter } from './providers/mail-provider.interface.js';
+import { ZohoProvider } from './providers/zoho.provider.js';
 
 @Injectable()
 export class MailProviderRegistry {

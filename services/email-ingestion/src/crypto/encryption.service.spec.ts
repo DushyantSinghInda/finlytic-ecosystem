@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { EncryptionService } from './encryption.service';
+import { EncryptionService } from './encryption.service.js';
 import type { ConfigService } from '@nestjs/config';
 
 function buildService(keyBase64 = randomBytes(32).toString('base64')) {

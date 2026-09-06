@@ -1,14 +1,15 @@
 import { Module } from '@nestjs/common';
-import { UsersModule } from '../users/users.module';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+import { UsersModule } from '../users/users.module.js';
+import { AuthController } from './auth.controller.js';
+import { AuthService } from './auth.service.js';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { TokenService } from './token.service';
-import { RefreshTokenService } from './refresh-token.service';
-import { PrismaModule } from '../prisma/prisma.module';
+import { TokenService } from './token.service.js';
+import { RefreshTokenService } from './refresh-token.service.js';
+import { PrismaModule } from '../prisma/prisma.module.js';
+import { PasswordHasher } from './password-hasher.js';
 
 @Module({
 	imports: [
@@ -40,6 +41,6 @@ import { PrismaModule } from '../prisma/prisma.module';
 		}),
 	],
 	controllers: [AuthController],
-	providers: [AuthService, TokenService, RefreshTokenService],
+	providers: [AuthService, TokenService, RefreshTokenService, PasswordHasher],
 })
 export class AuthModule {}

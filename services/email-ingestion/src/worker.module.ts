@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { validateEnv } from './config/env.validation';
-import { QueueModule } from './queue/queue.module';
-import { SyncProcessingModule } from './sync/sync-processing.module';
+import { validateEnv } from './config/env.validation.js';
+import { QueueModule } from './queue/queue.module.js';
+import { SyncProcessingModule } from './sync/sync-processing.module.js';
 
 @Module({
 	imports: [

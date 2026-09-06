@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaService } from '../prisma/prisma.service';
-import { SyncQueueService } from '../queue/sync-queue.service';
-import { AccountStatus } from '../generated/prisma/client';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { SyncQueueService } from '../queue/sync-queue.service.js';
+import { AccountStatus } from '../generated/prisma/client.js';
 
 @Injectable()
 export class SyncSchedulerService {

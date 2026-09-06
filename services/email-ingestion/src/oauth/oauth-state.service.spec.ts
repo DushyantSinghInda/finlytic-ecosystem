@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { OAuthStateService } from './oauth-state.service';
+import { OAuthStateService } from './oauth-state.service.js';
 import type { ConfigService } from '@nestjs/config';
 
 function buildService(secret = randomBytes(32).toString('base64')) {

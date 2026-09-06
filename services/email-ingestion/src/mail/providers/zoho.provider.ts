@@ -7,7 +7,7 @@ import {
 	UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { MailProvider } from '../../generated/prisma/client';
+import { MailProvider } from '../../generated/prisma/client.js';
 import type {
 	ConnectResult,
 	MailProviderAdapter,
@@ -18,7 +18,7 @@ import type {
 	ProviderMetadata,
 	ProviderProfile,
 	RawMessage,
-} from './mail-provider.interface';
+} from './mail-provider.interface.js';
 
 /**
  * Zoho runs independent data centres and a refresh token issued by one is

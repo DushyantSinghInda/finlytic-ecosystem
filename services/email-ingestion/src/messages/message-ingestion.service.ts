@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { ObjectStorageService } from '../storage/object-storage.service';
-import { type MailAccount, Prisma } from '../generated/prisma/client';
-import type { RawMessage } from '../mail/providers/mail-provider.interface';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { ObjectStorageService } from '../storage/object-storage.service.js';
+import { type MailAccount, Prisma } from '../generated/prisma/client.js';
+import type { RawMessage } from '../mail/providers/mail-provider.interface.js';
 import { type AddressObject, simpleParser } from 'mailparser';
 
 export interface IngestResult {

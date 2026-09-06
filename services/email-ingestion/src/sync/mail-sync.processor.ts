@@ -3,8 +3,8 @@ import { Logger } from '@nestjs/common';
 import {
 	MAIL_SYNC_QUEUE,
 	type MailSyncJobData,
-} from '../queue/queue.constants';
-import { MailSyncService, type SyncOutcome } from './mail-sync.service';
+} from '../queue/queue.constants.js';
+import { MailSyncService, type SyncOutcome } from './mail-sync.service.js';
 import { Job } from 'bullmq';
 
 @Processor(MAIL_SYNC_QUEUE, { concurrency: 2 })

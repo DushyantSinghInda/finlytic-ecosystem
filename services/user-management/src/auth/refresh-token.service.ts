@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { PrismaService } from '../prisma/prisma.service';
-import { RefreshToken } from '../generated/prisma/client';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { RefreshToken } from '../generated/prisma/client.js';
 
 export interface ClientMeta {
 	ipAddress?: string;

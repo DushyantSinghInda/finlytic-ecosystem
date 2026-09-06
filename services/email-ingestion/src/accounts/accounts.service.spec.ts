@@ -1,11 +1,11 @@
-import { AccountsService } from './accounts.service';
-import { MailProvider } from '../generated/prisma/enums';
-import type { AccountTokenService } from './account-token.service';
-import type { ConnectResult } from '../mail/providers/mail-provider.interface';
-import type { EncryptionService } from '../crypto/encryption.service';
-import type { MailProviderRegistry } from '../mail/mail-provider.registry';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { SyncQueueService } from '../queue/sync-queue.service';
+import { AccountsService } from './accounts.service.js';
+import { MailProvider } from '../generated/prisma/enums.js';
+import type { AccountTokenService } from './account-token.service.js';
+import type { ConnectResult } from '../mail/providers/mail-provider.interface.js';
+import type { EncryptionService } from '../crypto/encryption.service.js';
+import type { MailProviderRegistry } from '../mail/mail-provider.registry.js';
+import type { PrismaService } from '../prisma/prisma.service.js';
+import type { SyncQueueService } from '../queue/sync-queue.service.js';
 
 const REQUIRED = ['ZohoMail.accounts.READ', 'ZohoMail.messages.READ'];
 

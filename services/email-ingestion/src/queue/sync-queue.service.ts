@@ -3,7 +3,7 @@ import {
 	MAIL_SYNC_QUEUE,
 	type MailSyncJobData,
 	SYNC_ACCOUNT_JOB,
-} from './queue.constants';
+} from './queue.constants.js';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 

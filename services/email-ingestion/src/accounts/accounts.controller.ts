@@ -8,13 +8,12 @@ import {
 	Post,
 	UseGuards,
 } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
 import {
 	CurrentUser,
 	JwtAuthGuard,
 	type AuthenticatedUser,
 } from '@finlytic/auth-lib';
-import { AccountsService } from './accounts.service';
+import { AccountsService } from './accounts.service.js';
 
 @Controller('accounts')
 @UseGuards(JwtAuthGuard)
@@ -27,7 +26,6 @@ export class AccountsController {
 	}
 
 	@Post(':id/preview')
-	@Throttle({ default: { limit: 10, ttl: 60_000 } })
 	preview(
 		@CurrentUser() user: AuthenticatedUser,
 		@Param('id', ParseUUIDPipe) id: string,
@@ -37,7 +35,6 @@ export class AccountsController {
 
 	@Post(':id/sync')
 	@HttpCode(HttpStatus.ACCEPTED)
-	@Throttle({ default: { limit: 10, ttl: 60_000 } })
 	requestSync(
 		@CurrentUser() user: AuthenticatedUser,
 		@Param('id', ParseUUIDPipe) id: string,

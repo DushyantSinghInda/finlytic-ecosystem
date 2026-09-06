@@ -11,9 +11,9 @@ import {
 	JwtAuthGuard,
 	type AuthenticatedUser,
 } from '@finlytic/auth-lib';
-import { MailProviderRegistry } from '../mail/mail-provider.registry';
-import { AccountsService } from '../accounts/accounts.service';
-import { OAuthStateService } from './oauth-state.service';
+import { MailProviderRegistry } from '../mail/mail-provider.registry.js';
+import { AccountsService } from '../accounts/accounts.service.js';
+import { OAuthStateService } from './oauth-state.service.js';
 
 @Controller('oauth/:provider')
 export class OAuthController {

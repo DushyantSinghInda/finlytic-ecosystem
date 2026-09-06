@@ -1,6 +1,6 @@
-import { ZohoProvider } from './zoho.provider';
+import { ZohoProvider } from './zoho.provider.js';
 import type { ConfigService } from '@nestjs/config';
-import type { ProviderConnection } from './mail-provider.interface';
+import type { ProviderConnection } from './mail-provider.interface.js';
 
 const connection: ProviderConnection = {
 	accessToken: 'zoho-token',

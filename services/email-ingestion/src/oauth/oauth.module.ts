@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { SecurityModule } from '../security/security.module';
-import { MailModule } from '../mail/mail.module';
-import { AccountsModule } from '../accounts/accounts.module';
-import { OAuthController } from './oauth.controller';
-import { OAuthStateService } from './oauth-state.service';
+import { SecurityModule } from '../security/security.module.js';
+import { MailModule } from '../mail/mail.module.js';
+import { AccountsModule } from '../accounts/accounts.module.js';
+import { OAuthController } from './oauth.controller.js';
+import { OAuthStateService } from './oauth-state.service.js';
 
 @Module({
 	imports: [SecurityModule, MailModule, AccountsModule],

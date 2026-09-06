@@ -6,24 +6,20 @@ import {
 	UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as argon2 from 'argon2';
 import { createHash, randomBytes } from 'node:crypto';
-import { UsersService } from '../users/users.service';
-import { TokenService } from './token.service';
-import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
-import { Prisma } from '../generated/prisma/client';
-import type { User } from '../generated/prisma/client';
-import { RefreshTokenService, type ClientMeta } from './refresh-token.service';
-import { RefreshDto } from './dto/refresh.dto';
-import { type PublicUser, toPublicUser } from '../users/user.mapper';
-
-const ARGON2_OPTIONS: argon2.HashOptions = {
-	type: argon2.argon2id,
-	memoryCost: 19456,
-	timeCost: 2,
-	parallelism: 1,
-};
+import { UsersService } from '../users/users.service.js';
+import { TokenService } from './token.service.js';
+import { LoginDto } from './dto/login.dto.js';
+import { RegisterDto } from './dto/register.dto.js';
+import { Prisma } from '../generated/prisma/client.js';
+import type { User } from '../generated/prisma/client.js';
+import {
+	RefreshTokenService,
+	type ClientMeta,
+} from './refresh-token.service.js';
+import { RefreshDto } from './dto/refresh.dto.js';
+import { type PublicUser, toPublicUser } from '../users/user.mapper.js';
+import { PasswordHasher } from './password-hasher.js';
 
 export interface LoginResponse {
 	accessToken: string;
@@ -43,17 +39,17 @@ export class AuthService implements OnModuleInit {
 		private readonly tokenService: TokenService,
 		private readonly configService: ConfigService,
 		private readonly refreshTokenService: RefreshTokenService,
+		private readonly passwordHasher: PasswordHasher,
 	) {}
 
 	async onModuleInit(): Promise<void> {
-		this.decoyHash = await argon2.hash(
+		this.decoyHash = await this.passwordHasher.hash(
 			randomBytes(32).toString('hex'),
-			ARGON2_OPTIONS,
 		);
 	}
 
 	async register(dto: RegisterDto): Promise<PublicUser> {
-		const passwordHash = await argon2.hash(dto.password, ARGON2_OPTIONS);
+		const passwordHash = await this.passwordHasher.hash(dto.password);
 
 		try {
 			const user = await this.usersService.create(dto.email, passwordHash);
@@ -75,11 +71,12 @@ export class AuthService implements OnModuleInit {
 	async login(dto: LoginDto, meta: ClientMeta): Promise<LoginResponse> {
 		const user = await this.usersService.findByEmail(dto.email);
 
-		// Always run one argon2 verification, even when no user exists,
-		// so the response time cannot reveal whether the email is registered.
-		const passwordMatches = await argon2
-			.verify(user?.passwordHash ?? this.decoyHash, dto.password)
-			.catch(() => false);
+		// Always run one verification, even when no user exists, so the response
+		// time cannot reveal whether the email is registered.
+		const passwordMatches = await this.passwordHasher.verify(
+			user?.passwordHash ?? this.decoyHash,
+			dto.password,
+		);
 
 		if (!user || !passwordMatches || !user.isActive) {
 			const emailFingerprint = createHash('sha256')

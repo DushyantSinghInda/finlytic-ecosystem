@@ -1,15 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { AccountTokenService } from '../accounts/account-token.service';
-import { MailProviderRegistry } from '../mail/mail-provider.registry';
-import { MessageIngestionService } from '../messages/message-ingestion.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { AccountTokenService } from '../accounts/account-token.service.js';
+import { MailProviderRegistry } from '../mail/mail-provider.registry.js';
+import { MessageIngestionService } from '../messages/message-ingestion.service.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 import { UnrecoverableError } from 'bullmq';
-import { AccountStatus } from '../generated/prisma/enums';
+import { AccountStatus } from '../generated/prisma/enums.js';
 import type {
 	MailProviderAdapter,
 	ProviderConnection,
-} from '../mail/providers/mail-provider.interface';
-import type { MailAccount } from '../generated/prisma/client';
+} from '../mail/providers/mail-provider.interface.js';
+import type { MailAccount } from '../generated/prisma/client.js';
 
 const INITIAL_BATCH = 50;
 const MAX_IDS_PER_RUN = 200;

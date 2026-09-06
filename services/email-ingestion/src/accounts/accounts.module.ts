@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { SecurityModule } from '../security/security.module';
-import { PrismaModule } from '../prisma/prisma.module';
-import { CryptoModule } from '../crypto/crypto.module';
-import { AccountsController } from './accounts.controller';
-import { AccountsService } from './accounts.service';
-import { MailModule } from '../mail/mail.module';
-import { AccountTokenService } from './account-token.service';
-import { QueueModule } from '../queue/queue.module';
+import { SecurityModule } from '../security/security.module.js';
+import { PrismaModule } from '../prisma/prisma.module.js';
+import { CryptoModule } from '../crypto/crypto.module.js';
+import { AccountsController } from './accounts.controller.js';
+import { AccountsService } from './accounts.service.js';
+import { MailModule } from '../mail/mail.module.js';
+import { AccountTokenService } from './account-token.service.js';
+import { QueueModule } from '../queue/queue.module.js';
 
 @Module({
 	imports: [

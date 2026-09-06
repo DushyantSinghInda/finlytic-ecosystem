@@ -1,15 +1,14 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
 import { ConfigModule } from '@nestjs/config';
-import { validateEnv } from './config/env.validation';
-import { PrismaModule } from './prisma/prisma.module';
-import { AccountsModule } from './accounts/accounts.module';
-import { CryptoModule } from './crypto/crypto.module';
-import { OAuthModule } from './oauth/oauth.module';
-import { StorageModule } from './storage/storage.module';
-import { ThrottlerModule } from '@nestjs/throttler';
-import { QueueModule } from './queue/queue.module';
+import { validateEnv } from './config/env.validation.js';
+import { PrismaModule } from './prisma/prisma.module.js';
+import { AccountsModule } from './accounts/accounts.module.js';
+import { CryptoModule } from './crypto/crypto.module.js';
+import { OAuthModule } from './oauth/oauth.module.js';
+import { StorageModule } from './storage/storage.module.js';
+import { QueueModule } from './queue/queue.module.js';
 
 @Module({
 	imports: [
@@ -17,9 +16,6 @@ import { QueueModule } from './queue/queue.module';
 			isGlobal: true,
 			envFilePath: '.env',
 			validate: validateEnv,
-		}),
-		ThrottlerModule.forRoot({
-			throttlers: [{ name: 'default', ttl: 60_000, limit: 100 }],
 		}),
 		PrismaModule,
 		CryptoModule,
