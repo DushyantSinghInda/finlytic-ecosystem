@@ -17,7 +17,7 @@
 		"infra:down": "docker compose down",
 		"infra:reset": "docker compose down -v",
 		"infra:logs": "docker compose logs -f",
-		"test": "jest"
+		"test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js"
 	},
 	"engines": {
 		"node": ">=24"

@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { randomUUID } from 'node:crypto';
 import { MessageIngestionService } from '../src/messages/message-ingestion.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';

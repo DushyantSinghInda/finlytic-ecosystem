@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { ZohoProvider } from './zoho.provider.js';
 import type { ConfigService } from '@nestjs/config';
 import type { ProviderConnection } from './mail-provider.interface.js';

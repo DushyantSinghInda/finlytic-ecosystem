@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { AuthService } from './auth.service.js';
 import { PasswordHasher } from './password-hasher.js';
 import { Prisma } from '../generated/prisma/client.js';

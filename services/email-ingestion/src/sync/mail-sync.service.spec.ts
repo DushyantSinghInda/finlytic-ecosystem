@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { MailSyncService } from './mail-sync.service.js';
 import type { AccountTokenService } from '../accounts/account-token.service.js';
 import type { MailProviderRegistry } from '../mail/mail-provider.registry.js';

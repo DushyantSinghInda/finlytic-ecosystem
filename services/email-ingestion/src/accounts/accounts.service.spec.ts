@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { AccountsService } from './accounts.service.js';
 import { MailProvider } from '../generated/prisma/enums.js';
 import type { AccountTokenService } from './account-token.service.js';
