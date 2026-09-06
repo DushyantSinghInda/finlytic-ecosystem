@@ -43,7 +43,7 @@
     "@nestjs/throttler": "^6.5.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
-    "bullmq": "^6.2.0",
+    "bullmq": "^6.3.4",
     "ioredis": "^6.0.0",
     "mailparser": "^3.9.15",
     "reflect-metadata": "^0.2.2",
