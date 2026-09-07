@@ -2,9 +2,12 @@ import { Button } from '@/components/ui/button';
 import { AccountsPanel } from '@/accounts/AccountsPanel';
 import { LoginForm } from '@/auth/LoginForm';
 import { useAuth } from './auth/auth-context';
+import { useSyncEvents } from './accounts/useSyncEvents';
 
 export default function App() {
   const { state, signOut } = useAuth();
+
+  useSyncEvents(state.status === 'authenticated');
 
   if (state.status === 'loading') {
     return <p className="text-muted-foreground p-8">Restoring session…</p>;

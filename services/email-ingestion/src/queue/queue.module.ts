@@ -3,6 +3,7 @@ import { SyncQueueService } from './sync-queue.service.js';
 import { BullModule } from '@nestjs/bullmq';
 import { MAIL_SYNC_QUEUE } from './queue.constants.js';
 import { ConfigService } from '@nestjs/config';
+import { SyncEventsService } from './sync-events.service.js';
 
 const bullRoot = BullModule.forRootAsync({
 	inject: [ConfigService],
@@ -24,7 +25,7 @@ const syncQueue = BullModule.registerQueue({ name: MAIL_SYNC_QUEUE });
 
 @Module({
 	imports: [bullRoot, syncQueue],
-	providers: [SyncQueueService],
-	exports: [bullRoot, syncQueue, SyncQueueService],
+	providers: [SyncQueueService, SyncEventsService],
+	exports: [bullRoot, syncQueue, SyncQueueService, SyncEventsService],
 })
 export class QueueModule {}

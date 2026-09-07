@@ -25,9 +25,6 @@ export function useRequestSync() {
 			// seconds later. Refetch now for the status, then once more to catch
 			// the result. A heuristic: the honest fix is the server telling us.
 			void queryClient.invalidateQueries({ queryKey: ['accounts'] });
-			setTimeout(() => {
-				void queryClient.invalidateQueries({ queryKey: ['accounts'] });
-			}, 2500);
 		},
 	});
 }
