@@ -12,6 +12,7 @@ import type { ConnectResult } from '../mail/providers/mail-provider.interface.js
 import { MailProviderRegistry } from '../mail/mail-provider.registry.js';
 import { AccountTokenService } from './account-token.service.js';
 import { SyncQueueService } from '../queue/sync-queue.service.js';
+import type { MailAccountSummary } from '@finlytic/shared-types';
 
 @Injectable()
 export class AccountsService {
@@ -143,8 +144,8 @@ export class AccountsService {
 		return { accepted: true, jobId, alreadyQueued, status: account.status };
 	}
 
-	listForUser(userId: string) {
-		return this.prisma.mailAccount.findMany({
+	async listForUser(userId: string): Promise<MailAccountSummary[]> {
+		const accounts = await this.prisma.mailAccount.findMany({
 			where: { userId },
 			select: {
 				id: true,
@@ -157,5 +158,13 @@ export class AccountsService {
 			},
 			orderBy: { createdAt: 'asc' },
 		});
+
+		return accounts.map((account) => ({
+			...account,
+			// The contract says ISO strings; serialise here rather than letting
+			// the framework do it invisibly on the way out.
+			lastSyncedAt: account.lastSyncedAt?.toISOString() ?? null,
+			createdAt: account.createdAt.toISOString(),
+		}));
 	}
 }

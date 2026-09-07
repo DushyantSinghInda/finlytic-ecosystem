@@ -48,6 +48,7 @@ COPY packages/auth-lib/package.json packages/auth-lib/
 COPY services/gateway/package.json services/gateway/
 COPY services/user-management/package.json services/user-management/
 COPY services/email-ingestion/package.json services/email-ingestion/
+COPY apps/web/package.json apps/web/
 RUN --mount=type=cache,target=/root/.npm,sharing=locked \
     --mount=type=cache,target=/root/.cache,sharing=locked \
     apk add --no-cache --virtual .build-deps python3 make g++ \
@@ -69,6 +70,9 @@ CMD ["node", "services/user-management/dist/main.js"]
 
 FROM builder AS migrator
 WORKDIR /app
+
+COPY apps/web/package.json apps/web/
+
 # Through the workspace script, not a bare `prisma migrate deploy` — the Prisma 7 CLI
 # discovers prisma.config.ts from cwd, and cwd here is /app.
 CMD ["npm", "run", "prisma:deploy", "-w", "services/user-management"]

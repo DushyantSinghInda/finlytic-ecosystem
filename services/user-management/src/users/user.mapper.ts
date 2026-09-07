@@ -1,12 +1,8 @@
-import type { User, UserRole } from '../generated/prisma/client.js';
+import type { User } from '../generated/prisma/client.js';
+import type { PublicUser } from '@finlytic/shared-types';
 
-export interface PublicUser {
-	id: string;
-	email: string;
-	role: UserRole;
-	isActive: boolean;
-	createdAt: Date;
-}
+// Re-exported so the eight existing import sites keep working.
+export type { PublicUser };
 
 export function toPublicUser(user: User): PublicUser {
 	return {
@@ -14,6 +10,8 @@ export function toPublicUser(user: User): PublicUser {
 		email: user.email,
 		role: user.role,
 		isActive: user.isActive,
-		createdAt: user.createdAt,
+		// The contract says string, so serialise here rather than letting the
+		// framework do it invisibly on the way out.
+		createdAt: user.createdAt.toISOString(),
 	};
 }

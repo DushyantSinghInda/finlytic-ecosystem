@@ -11,6 +11,7 @@ COPY packages/auth-lib/package.json packages/auth-lib/
 COPY services/user-management/package.json services/user-management/
 COPY services/email-ingestion/package.json services/email-ingestion/
 COPY services/gateway/package.json services/gateway/
+COPY apps/web/package.json apps/web/
 RUN --mount=type=cache,target=/root/.npm,sharing=locked \
     npm ci --fetch-retries=5 --fetch-retry-maxtimeout=120000
 

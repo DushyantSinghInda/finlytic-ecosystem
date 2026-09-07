@@ -98,6 +98,10 @@ export class AuthService implements OnModuleInit {
 	}
 
 	async refresh(dto: RefreshDto, meta: ClientMeta): Promise<LoginResponse> {
+		if (!dto.refreshToken) {
+			throw new UnauthorizedException('Invalid refresh token');
+		}
+
 		const spent = await this.refreshTokenService.spend(dto.refreshToken);
 
 		if (!spent) {
@@ -137,6 +141,10 @@ export class AuthService implements OnModuleInit {
 	}
 
 	async logout(dto: RefreshDto): Promise<void> {
+		if (!dto.refreshToken) {
+			return;
+		}
+
 		await this.refreshTokenService.revokeFamilyByToken(dto.refreshToken);
 	}
 }
