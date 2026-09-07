@@ -23,11 +23,8 @@ export default defineConfig({
     // the API from one origin — so there is no CORS in either environment,
     // and SameSite=Strict cookies behave the same in both.
     proxy: {
-      '/auth': 'http://localhost:3000',
-      '/users': 'http://localhost:3000',
-      '/accounts': 'http://localhost:3000',
+      '/api': 'http://localhost:3000',
       '/oauth': 'http://localhost:3000',
-      '/health': 'http://localhost:3000',
     },
   },
 })

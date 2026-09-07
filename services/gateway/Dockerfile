@@ -20,6 +20,9 @@ RUN --mount=type=cache,target=/root/.npm,sharing=locked \
 COPY packages/shared-types packages/shared-types
 RUN npm run build -w packages/shared-types
 
+COPY apps/web apps/web
+RUN npm run build -w apps/web
+
 COPY services/gateway services/gateway
 RUN npm run build -w services/gateway
 
@@ -37,6 +40,7 @@ ENV NODE_ENV=production
 # dist/main.js as CommonJS, and the first `import` is a syntax error.
 COPY services/gateway/package.json services/gateway/
 COPY --from=builder /app/services/gateway/dist services/gateway/dist
+COPY --from=builder /app/apps/web/dist apps/web/dist
 
 USER node
 EXPOSE 3000

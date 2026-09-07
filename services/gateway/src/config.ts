@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 export interface GatewayConfig {
 	port: number;
@@ -7,6 +8,8 @@ export interface GatewayConfig {
 	audience: string;
 	userManagementUrl: string;
 	emailIngestionUrl: string;
+	/** Absolute path to the built SPA, or null to disable static serving. */
+	webRoot: string | null;
 }
 
 function required(name: string): string {
@@ -30,5 +33,6 @@ export function loadConfig(): GatewayConfig {
 		audience: required('JWT_AUDIENCE'),
 		userManagementUrl: required('USER_MANAGEMENT_URL'),
 		emailIngestionUrl: required('EMAIL_INGESTION_URL'),
+		webRoot: process.env.WEB_ROOT ? resolve(process.env.WEB_ROOT) : null,
 	};
 }

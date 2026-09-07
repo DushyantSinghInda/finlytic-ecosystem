@@ -13,19 +13,27 @@ const routes = buildRoutes(config);
 describe('matchRoute', () => {
 	const cases = [
 		{
-			path: '/auth/login',
+			path: '/api/auth/login',
 			target: config.userManagementUrl,
 			requiresAuth: false,
 		},
 		{
-			path: '/auth/refresh',
+			path: '/api/auth/refresh',
 			target: config.userManagementUrl,
 			requiresAuth: false,
 		},
-		{ path: '/users/me', target: config.userManagementUrl, requiresAuth: true },
-		{ path: '/accounts', target: config.emailIngestionUrl, requiresAuth: true },
 		{
-			path: '/accounts/abc/sync',
+			path: '/api/users/me',
+			target: config.userManagementUrl,
+			requiresAuth: true,
+		},
+		{
+			path: '/api/accounts',
+			target: config.emailIngestionUrl,
+			requiresAuth: true,
+		},
+		{
+			path: '/api/accounts/abc/sync',
 			target: config.emailIngestionUrl,
 			requiresAuth: true,
 		},
@@ -62,7 +70,7 @@ describe('matchRoute', () => {
 
 	it('does not match on a prefix that is only a substring', () => {
 		// /authorization must not fall into the /auth route.
-		assert.equal(matchRoute(routes, '/authorization'), undefined);
+		assert.equal(matchRoute(routes, '/api/authorization'), undefined);
 	});
 
 	it('leaves unknown paths and /health unrouted', () => {

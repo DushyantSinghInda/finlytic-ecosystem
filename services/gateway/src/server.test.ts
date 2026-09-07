@@ -131,7 +131,7 @@ describe('gateway end to end', () => {
 	});
 
 	it('routes /users to user-management', async () => {
-		const response = await fetch(`${base}/users/me`, { headers: auth });
+		const response = await fetch(`${base}/api/users/me`, { headers: auth });
 
 		assert.equal(response.status, 200);
 		assert.equal(response.headers.get('x-upstream'), 'user-management');
@@ -139,7 +139,7 @@ describe('gateway end to end', () => {
 	});
 
 	it('routes /accounts to the OTHER upstream', async () => {
-		const response = await fetch(`${base}/accounts`, { headers: auth });
+		const response = await fetch(`${base}/api/accounts`, { headers: auth });
 
 		assert.equal(response.headers.get('x-upstream'), 'email-ingestion');
 		assert.equal(emailLog.at(-1)?.url, '/accounts');
@@ -147,7 +147,7 @@ describe('gateway end to end', () => {
 
 	it('rejects an unauthenticated protected route without contacting the upstream', async () => {
 		const before = userLog.length;
-		const response = await fetch(`${base}/users/me`);
+		const response = await fetch(`${base}/api/users/me`);
 
 		assert.equal(response.status, 401);
 		// The upstream never saw the request.
@@ -157,7 +157,7 @@ describe('gateway end to end', () => {
 	it('streams a request body through without parsing it', async () => {
 		const payload = JSON.stringify({ email: 'a@b.com', password: 'secret' });
 
-		const response = await fetch(`${base}/auth/login`, {
+		const response = await fetch(`${base}/api/auth/login`, {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
 			body: payload,
@@ -175,7 +175,7 @@ describe('gateway end to end', () => {
 		// The login rule allows 5 a minute and an earlier test already spent one,
 		// so loop until the limiter answers rather than assuming a count.
 		for (let attempt = 0; attempt < 8; attempt += 1) {
-			last = await fetch(`${base}/auth/login`, {
+			last = await fetch(`${base}/api/auth/login`, {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: '{}',
@@ -206,7 +206,7 @@ describe('gateway end to end', () => {
 	});
 
 	it('forwards the token and replaces Host with the upstream', async () => {
-		await fetch(`${base}/users/me`, { headers: auth });
+		await fetch(`${base}/api/users/me`, { headers: auth });
 		const received = userLog.at(-1);
 
 		// The service verifies independently, so the header must survive the hop.
@@ -216,7 +216,7 @@ describe('gateway end to end', () => {
 	});
 
 	it('overwrites a client-supplied x-forwarded-for', async () => {
-		await fetch(`${base}/users/me`, {
+		await fetch(`${base}/api/users/me`, {
 			headers: { ...auth, 'x-forwarded-for': '203.0.113.9' },
 		});
 
@@ -234,7 +234,7 @@ describe('gateway end to end', () => {
 	});
 
 	it('mints a request id and ignores a caller-supplied one', async () => {
-		const response = await fetch(`${base}/users/me`, {
+		const response = await fetch(`${base}/api/users/me`, {
 			headers: { ...auth, 'x-request-id': 'client-controlled' },
 		});
 
@@ -248,10 +248,17 @@ describe('gateway end to end', () => {
 		// Runs last: it closes a stub the other tests depend on.
 		await close(emailStub);
 
-		const response = await fetch(`${base}/accounts`, { headers: auth });
+		const response = await fetch(`${base}/api/accounts`, { headers: auth });
 		const body = (await response.json()) as { statusCode: number };
 
 		assert.equal(response.status, 502);
 		assert.equal(body.statusCode, 502);
+	});
+
+	it('strips /api before forwarding', async () => {
+		await fetch(`${base}/api/users/me`, { headers: auth });
+
+		// The service knows nothing about /api.
+		assert.equal(userLog.at(-1)?.url, '/users/me');
 	});
 });

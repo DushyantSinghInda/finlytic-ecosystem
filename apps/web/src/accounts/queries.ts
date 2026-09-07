@@ -8,7 +8,7 @@ export function useAccounts() {
 		// Query hands in an AbortSignal and cancels on unmount or refetch — one
 		// of the reasons to keep fetch rather than adapt a library to it.
 		queryFn: ({ signal }) =>
-			apiJson<MailAccountSummary[]>('/accounts', { signal }),
+			apiJson<MailAccountSummary[]>('/api/accounts', { signal }),
 	});
 }
 
@@ -17,7 +17,7 @@ export function useRequestSync() {
 
 	return useMutation({
 		mutationFn: (accountId: string) =>
-			apiJson<SyncRequestResult>(`/accounts/${accountId}/sync`, {
+			apiJson<SyncRequestResult>(`/api/accounts/${accountId}/sync`, {
 				method: 'POST',
 			}),
 		onSuccess: () => {

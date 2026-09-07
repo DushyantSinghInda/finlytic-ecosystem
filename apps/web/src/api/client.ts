@@ -38,7 +38,7 @@ let refreshInFlight: Promise<Session | null> | null = null;
  */
 export function refreshSession(): Promise<Session | null> {
 	refreshInFlight ??= (async (): Promise<Session | null> => {
-		const response = await fetch('/auth/refresh', {
+		const response = await fetch('/api/auth/refresh', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
 			body: '{}',
@@ -95,7 +95,7 @@ export async function apiJson<T>(
 }
 
 export async function login(email: string, password: string): Promise<Session> {
-	const response = await fetch('/auth/login', {
+	const response = await fetch('/api/auth/login', {
 		method: 'POST',
 		headers: { 'content-type': 'application/json' },
 		body: JSON.stringify({ email, password }),
@@ -112,7 +112,7 @@ export async function login(email: string, password: string): Promise<Session> {
 }
 
 export async function logout(): Promise<void> {
-	await fetch('/auth/logout', {
+	await fetch('/api/auth/logout', {
 		method: 'POST',
 		headers: { 'content-type': 'application/json' },
 		body: '{}',

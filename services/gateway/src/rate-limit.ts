@@ -18,18 +18,23 @@ export const WINDOW_MS = 60_000;
 // unchanged: same numbers, same one-minute window, one bucket per rule so that
 // two paths matching the same rule share a counter.
 const RULES: Rule[] = [
-	{ id: 'auth-login', method: 'POST', pattern: /^\/auth\/login$/, max: 5 },
+	{ id: 'auth-login', method: 'POST', pattern: /^\/api\/auth\/login$/, max: 5 },
 	{
 		id: 'auth-register',
 		method: 'POST',
-		pattern: /^\/auth\/register$/,
+		pattern: /^\/api\/auth\/register$/,
 		max: 5,
 	},
-	{ id: 'auth-refresh', method: 'POST', pattern: /^\/auth\/refresh$/, max: 20 },
+	{
+		id: 'auth-refresh',
+		method: 'POST',
+		pattern: /^\/api\/auth\/refresh$/,
+		max: 20,
+	},
 	{
 		id: 'account-actions',
 		method: 'POST',
-		pattern: /^\/accounts\/[^/]+\/(preview|sync)$/,
+		pattern: /^\/api\/accounts\/[^/]+\/(preview|sync)$/,
 		max: 10,
 	},
 ];

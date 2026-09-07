@@ -6,7 +6,7 @@ export const REFRESH_COOKIE = 'refresh_token';
  * Scoped to /auth so the browser never attaches it to /users or /accounts —
  * the cookie is only useful at the two endpoints that spend it.
  */
-const COOKIE_PATH = '/auth';
+const COOKIE_PATH = '/api/auth';
 
 export function setRefreshCookie(
 	res: Response,

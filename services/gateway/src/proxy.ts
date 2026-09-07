@@ -52,8 +52,9 @@ export function proxy(
 	res: ServerResponse,
 	target: string,
 	context: ProxyContext,
+	path: string,
 ): void {
-	const upstream = new URL(req.url ?? '/', target);
+	const upstream = new URL(path, target);
 	const headers = forwardable(req.headers);
 
 	// Written from the socket and never copied from the caller, otherwise a

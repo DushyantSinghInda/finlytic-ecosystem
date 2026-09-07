@@ -8,6 +8,7 @@ import type { GatewayConfig } from './config.ts';
 import { createRateLimiter, WINDOW_MS } from './rate-limit.ts';
 import { randomBytes } from 'node:crypto';
 import { log } from './logger.ts';
+import { serveStatic } from './static.ts';
 
 function bearerToken(req: IncomingMessage): string | null {
 	const header = req.headers.authorization;
@@ -28,7 +29,7 @@ export function createGatewayServer(config: GatewayConfig): Server {
 	// test runner exiting and make docker stop wait for the timer.
 	setInterval(() => limiter.prune(), WINDOW_MS).unref();
 
-	return createServer((req, res) => {
+	return createServer(async (req, res) => {
 		const started = process.hrtime.bigint();
 		// 8 bytes is ample for correlating inside a log retention window, and a
 		// 36-character UUID in every line is mostly noise.
@@ -85,6 +86,20 @@ export function createGatewayServer(config: GatewayConfig): Server {
 		const route = matchRoute(routes, pathname);
 
 		if (!route) {
+			// Static comes after the API route table, so /auth/login still proxies.
+			if (
+				config.webRoot &&
+				(req.method === 'GET' || req.method === 'HEAD') &&
+				(await serveStatic(
+					config.webRoot,
+					pathname,
+					req.headers.accept?.includes('text/html') ?? false,
+					res,
+				))
+			) {
+				return;
+			}
+
 			json(res, 404, { statusCode: 404, message: 'Not found' });
 			return;
 		}
@@ -113,6 +128,11 @@ export function createGatewayServer(config: GatewayConfig): Server {
 		}
 
 		upstreamName = route.target;
-		proxy(req, res, route.target, context);
+		// The services never learn about /api — it exists so client routes and
+		// API routes stop competing for the same paths.
+		const upstreamPath = route.stripPrefix
+			? (req.url ?? '/').slice(route.stripPrefix.length) || '/'
+			: (req.url ?? '/');
+		proxy(req, res, route.target, context, upstreamPath);
 	});
 }
