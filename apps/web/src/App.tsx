@@ -43,7 +43,7 @@ export default function App() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">Messages</h2>
-        <MessagesPanel accountId={selectedAccountId} />
+        <MessagesPanel key={selectedAccountId} accountId={selectedAccountId} />
       </section>
     </main>
   );

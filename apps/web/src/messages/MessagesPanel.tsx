@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMessages } from './queries';
+import { useState } from 'react';
+import { MessageSheet } from './MessageSheet';
 
 function formatSender(name: string | null, address: string | null): string {
 	return name ?? address ?? 'unknown sender';
@@ -10,6 +12,8 @@ function formatSender(name: string | null, address: string | null): string {
 
 export function MessagesPanel({ accountId }: { accountId: string | null }) {
 	const messages = useMessages(accountId);
+
+	const [openMessageId, setOpenMessageId] = useState<string | null>(null);
 
 	if (!accountId) {
 		return (
@@ -53,7 +57,12 @@ export function MessagesPanel({ accountId }: { accountId: string | null }) {
 		<div className="flex flex-col gap-3">
 			<Card className="divide-border divide-y py-0">
 				{rows.map((message) => (
-					<article key={message.id} className="flex flex-col gap-1 p-4">
+					<button
+						key={message.id}
+						type="button"
+						onClick={() => setOpenMessageId(message.id)}
+						className="hover:bg-muted/50 flex w-full flex-col gap-1 p-4 text-left transition-colors"
+					>
 						<div className="flex items-baseline justify-between gap-4">
 							<span className="truncate text-sm font-medium">
 								{formatSender(message.fromName, message.fromAddress)}
@@ -77,9 +86,14 @@ export function MessagesPanel({ accountId }: { accountId: string | null }) {
 								{message.snippet}
 							</p>
 						)}
-					</article>
+					</button>
 				))}
 			</Card>
+			<MessageSheet
+				accountId={accountId}
+				messageId={openMessageId}
+				onClose={() => setOpenMessageId(null)}
+			/>
 
 			{messages.hasNextPage && (
 				<Button

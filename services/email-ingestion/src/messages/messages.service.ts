@@ -1,10 +1,19 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import type { MessagePage } from '@finlytic/shared-types';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import type { MessagePage, MessageDetail } from '@finlytic/shared-types';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ObjectStorageService } from '../storage/object-storage.service.js';
+
+// A body is text; anything past this is a mail loop, a log dump or an attack.
+const MAX_BODY_BYTES = 256 * 1024;
 
 @Injectable()
 export class MessagesService {
-	constructor(private readonly prisma: PrismaService) { }
+	private readonly logger = new Logger(MessagesService.name);
+
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly storage: ObjectStorageService,
+	) {}
 
 	async listForAccount(
 		userId: string,
@@ -52,6 +61,67 @@ export class MessagesService {
 				sentAt: message.sentAt.toISOString(),
 			})),
 			nextCursor: rows.length > limit ? (page.at(-1)?.id ?? null) : null,
+		};
+	}
+
+	async getForAccount(
+		userId: string,
+		accountId: string,
+		messageId: string,
+	): Promise<MessageDetail> {
+		// Ownership travels through the relation, so it is one query and there
+		// is no window where the account check and the read disagree.
+		const message = await this.prisma.message.findFirst({
+			where: { id: messageId, accountId, account: { userId } },
+			select: {
+				id: true,
+				subject: true,
+				fromAddress: true,
+				fromName: true,
+				sentAt: true,
+				snippet: true,
+				hasAttachments: true,
+				labels: true,
+				sizeBytes: true,
+				providerThreadId: true,
+				toAddresses: true,
+				bodyTextKey: true,
+			},
+		});
+
+		if (!message) {
+			throw new NotFoundException('Message not found');
+		}
+
+		const { bodyTextKey, ...rest } = message;
+		let bodyText: string | null = null;
+		let bodyTruncated = false;
+
+		if (bodyTextKey) {
+			try {
+				const buffer = await this.storage.get(bodyTextKey);
+
+				bodyTruncated = buffer.byteLength > MAX_BODY_BYTES;
+				// Cutting on a byte boundary can split a multi-byte character;
+				// the cost is one replacement glyph at the very end.
+				bodyText = buffer.subarray(0, MAX_BODY_BYTES).toString('utf8');
+			} catch (error) {
+				// Metadata is in Postgres and the blob is in object storage, so
+				// the two can drift. A missing object is not a broken request —
+				// the message still exists, it just has no readable body.
+				this.logger.warn(
+					`Body object ${bodyTextKey} unreadable: ${
+						error instanceof Error ? error.message : 'unknown'
+					}`,
+				);
+			}
+		}
+
+		return {
+			...rest,
+			sentAt: rest.sentAt.toISOString(),
+			bodyText,
+			bodyTruncated,
 		};
 	}
 }

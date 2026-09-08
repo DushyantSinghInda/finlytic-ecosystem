@@ -12,4 +12,4 @@ import { MessagesService } from './messages.service.js';
 	providers: [MessageIngestionService, MessagesService],
 	exports: [MessageIngestionService],
 })
-export class MessagesModule { }
+export class MessagesModule {}

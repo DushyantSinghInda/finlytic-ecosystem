@@ -1,12 +1,23 @@
-import { Controller, Get, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
-import { CurrentUser, JwtAuthGuard, type AuthenticatedUser } from '@finlytic/auth-lib';
-import type { MessagePage } from '@finlytic/shared-types';
+import {
+	Controller,
+	Get,
+	Param,
+	ParseUUIDPipe,
+	Query,
+	UseGuards,
+} from '@nestjs/common';
+import {
+	CurrentUser,
+	JwtAuthGuard,
+	type AuthenticatedUser,
+} from '@finlytic/auth-lib';
+import type { MessageDetail, MessagePage } from '@finlytic/shared-types';
 import { MessagesService } from './messages.service.js';
 
 @Controller('accounts/:accountId/messages')
 @UseGuards(JwtAuthGuard)
 export class MessagesController {
-	constructor(private readonly messages: MessagesService) { }
+	constructor(private readonly messages: MessagesService) {}
 
 	@Get()
 	list(
@@ -19,5 +30,14 @@ export class MessagesController {
 		const take = Math.min(Math.max(Number(limit) || 25, 1), 100);
 
 		return this.messages.listForAccount(user.id, accountId, cursor, take);
+	}
+
+	@Get(':messageId')
+	get(
+		@CurrentUser() user: AuthenticatedUser,
+		@Param('accountId', ParseUUIDPipe) accountId: string,
+		@Param('messageId', ParseUUIDPipe) messageId: string,
+	): Promise<MessageDetail> {
+		return this.messages.getForAccount(user.id, accountId, messageId);
 	}
 }

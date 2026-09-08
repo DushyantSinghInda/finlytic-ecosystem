@@ -11,6 +11,15 @@ export interface MessageSummary {
 	sizeBytes: number | null;
 }
 
+export interface MessageDetail extends MessageSummary {
+	providerThreadId: string | null;
+	toAddresses: string[];
+	/** Null when the message had no text part, or the object is gone. */
+	bodyText: string | null;
+	/** True when bodyText was cut at the size cap. */
+	bodyTruncated: boolean;
+}
+
 export interface MessagePage {
 	messages: MessageSummary[];
 	/** Pass back as ?cursor= for the next page. null means the end. */
