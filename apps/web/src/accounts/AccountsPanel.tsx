@@ -16,7 +16,13 @@ function formatSyncedAt(value: string | null): string {
 	return value ? new Date(value).toLocaleString() : 'never';
 }
 
-export function AccountsPanel() {
+export function AccountsPanel({
+	selectedId,
+	onSelect
+}: {
+	selectedId: string | null;
+	onSelect: (accountId: string) => void;
+}) {
 	const accounts = useAccounts();
 	const requestSync = useRequestSync();
 
@@ -57,7 +63,12 @@ export function AccountsPanel() {
 					requestSync.isPending && requestSync.variables === account.id;
 
 				return (
-					<Card key={account.id}>
+					<Card
+						key={account.id}
+						onClick={() => onSelect(account.id)}
+						className={`cursor-pointer transition-colors ${selectedId === account.id ? 'border-primary' : 'hover:border-muted-foreground/40'
+							}`}
+					>
 						<CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
 							<div>
 								<CardTitle className="text-base">{account.emailAddress}</CardTitle>
@@ -72,7 +83,10 @@ export function AccountsPanel() {
 							<Button
 								size="sm"
 								disabled={syncing || account.status !== 'ACTIVE'}
-								onClick={() => requestSync.mutate(account.id)}
+								onClick={(e) => {
+									e.stopPropagation();
+									requestSync.mutate(account.id);
+								}}
 							>
 								{syncing ? 'Queueing…' : 'Sync now'}
 							</Button>

@@ -35,7 +35,11 @@ export function useSyncEvents(enabled: boolean): void {
 
 			// The worker has finished, so lastSyncedAt and status are both stale.
 			void queryClient.invalidateQueries({ queryKey: ['accounts'] });
-
+			// The sync just ingested mail into this account, so its message list
+			// is stale too — this is what makes new email appear with no clicking.
+			void queryClient.invalidateQueries({
+				queryKey: ['messages', event.accountId],
+			});
 			if (event.outcome === 'failed') {
 				console.warn(`sync failed for account ${event.accountId}`);
 			}

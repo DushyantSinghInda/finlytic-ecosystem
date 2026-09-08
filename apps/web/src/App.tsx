@@ -3,9 +3,13 @@ import { AccountsPanel } from '@/accounts/AccountsPanel';
 import { LoginForm } from '@/auth/LoginForm';
 import { useAuth } from './auth/auth-context';
 import { useSyncEvents } from './accounts/useSyncEvents';
+import { useState } from 'react';
+import { MessagesPanel } from './messages/MessagesPanel';
 
 export default function App() {
   const { state, signOut } = useAuth();
+
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
   useSyncEvents(state.status === 'authenticated');
 
@@ -32,7 +36,15 @@ export default function App() {
         </Button>
       </header>
 
-      <AccountsPanel />
+      <AccountsPanel
+        selectedId={selectedAccountId}
+        onSelect={setSelectedAccountId}
+      />
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-medium">Messages</h2>
+        <MessagesPanel accountId={selectedAccountId} />
+      </section>
     </main>
   );
 }

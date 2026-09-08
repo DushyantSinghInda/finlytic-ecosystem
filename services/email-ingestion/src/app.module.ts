@@ -9,6 +9,7 @@ import { CryptoModule } from './crypto/crypto.module.js';
 import { OAuthModule } from './oauth/oauth.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { QueueModule } from './queue/queue.module.js';
+import { MessagesModule } from './messages/messages.module.js';
 
 @Module({
 	imports: [
@@ -23,8 +24,9 @@ import { QueueModule } from './queue/queue.module.js';
 		OAuthModule,
 		StorageModule,
 		QueueModule,
+		MessagesModule
 	],
 	controllers: [AppController],
 	providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
