@@ -1,6 +1,6 @@
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
 
@@ -27,4 +27,11 @@ export default defineConfig({
       '/oauth': 'http://localhost:3000',
     },
   },
+  test: {
+    // No DOM needed: these cover module state and fetch, not components.
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
+    restoreMocks: true,
+    unstubGlobals: true
+  }
 })

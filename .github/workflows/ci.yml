@@ -56,6 +56,7 @@ jobs:
           npm test -w services/email-ingestion
           npm test -w services/user-management
           npm test -w services/gateway
+          npm test -w apps/web
 
       - name: Create the second test database
         env:
