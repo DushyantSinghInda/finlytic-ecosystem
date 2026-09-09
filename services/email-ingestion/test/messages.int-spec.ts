@@ -334,4 +334,41 @@ describe('MessagesService against Postgres', () => {
 			expect(detail).not.toHaveProperty('rawObjectKey');
 		});
 	});
+
+	describe('rawObjectKeyFor', () => {
+		it('refuses a message belonging to another user', async () => {
+			const theirs = await prisma.message.findFirstOrThrow({
+				where: { accountId: stranger.id },
+				select: { id: true },
+			});
+
+			await expect(
+				messages.rawObjectKeyFor(ownerId, stranger.id, theirs.id),
+			).rejects.toThrow('Message not found');
+		});
+
+		it('refuses another user’s message through an account it does own', async () => {
+			const theirs = await prisma.message.findFirstOrThrow({
+				where: { accountId: stranger.id },
+				select: { id: true },
+			});
+
+			// The download route repeats the ownership rule the detail route
+			// already has. Repeated rules are exactly the ones that drift.
+			await expect(
+				messages.rawObjectKeyFor(ownerId, owned.id, theirs.id),
+			).rejects.toThrow('Message not found');
+		});
+
+		it('returns the stored key for a message the caller owns', async () => {
+			const mine = await prisma.message.findFirstOrThrow({
+				where: { accountId: owned.id },
+				select: { id: true, rawObjectKey: true },
+			});
+
+			await expect(
+				messages.rawObjectKeyFor(ownerId, owned.id, mine.id),
+			).resolves.toBe(mine.rawObjectKey);
+		});
+	});
 });

@@ -124,4 +124,22 @@ export class MessagesService {
 			bodyTruncated,
 		};
 	}
+
+	/** Resolves the storage key for a message the caller owns. */
+	async rawObjectKeyFor(
+		userId: string,
+		accountId: string,
+		messageId: string,
+	): Promise<string> {
+		const message = await this.prisma.message.findFirst({
+			where: { id: messageId, accountId, account: { userId } },
+			select: { rawObjectKey: true },
+		});
+
+		if (!message) {
+			throw new NotFoundException('Message not found');
+		}
+
+		return message.rawObjectKey;
+	}
 }

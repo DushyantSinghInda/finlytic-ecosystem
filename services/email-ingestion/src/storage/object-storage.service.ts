@@ -7,6 +7,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Readable } from 'node:stream';
 
 @Injectable()
 export class ObjectStorageService implements OnModuleInit {
@@ -80,6 +81,24 @@ export class ObjectStorageService implements OnModuleInit {
 		);
 
 		return Buffer.from(await result.Body!.transformToByteArray());
+	}
+
+	/**
+	 * Streams an object instead of buffering it. Raw messages carry attachments
+	 * and run to tens of megabytes — the reason they live here rather than in
+	 * Postgres in the first place.
+	 */
+	async getStream(
+		key: string,
+	): Promise<{ body: Readable; contentLength: number | undefined }> {
+		const result = await this.client.send(
+			new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+		);
+
+		return {
+			body: result.Body as Readable,
+			contentLength: result.ContentLength,
+		};
 	}
 
 	async isReachable(): Promise<boolean> {
