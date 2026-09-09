@@ -24,11 +24,11 @@ import { pipeline } from 'node:stream/promises';
 @Controller('accounts/:accountId/messages')
 @UseGuards(JwtAuthGuard)
 export class MessagesController {
-	private readonly logger = new Logger(MessagesController.name)
+	private readonly logger = new Logger(MessagesController.name);
 	constructor(
 		private readonly messages: MessagesService,
 		private readonly storage: ObjectStorageService,
-	) { }
+	) {}
 
 	@Get()
 	list(
@@ -102,7 +102,8 @@ export class MessagesController {
 			// change. Dropping the socket is the only way to tell the client that
 			// the file it just saved is incomplete.
 			this.logger.warn(
-				`Raw download ${key} failed mid-stream: ${error instanceof Error ? error.message : 'unknown'
+				`Raw download ${key} failed mid-stream: ${
+					error instanceof Error ? error.message : 'unknown'
 				}`,
 			);
 			res.destroy();

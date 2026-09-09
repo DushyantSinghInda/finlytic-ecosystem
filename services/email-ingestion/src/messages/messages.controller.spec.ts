@@ -35,13 +35,12 @@ describe('MessagesController raw download', () => {
 		jest.fn<
 			(userId: string, accountId: string, messageId: string) => Promise<string>
 		>();
-	const getStream =
-		jest.fn<
-			(key: string) => Promise<{
-				body: Readable;
-				contentLength: number | undefined;
-			}>
-		>();
+	const getStream = jest.fn<
+		(key: string) => Promise<{
+			body: Readable;
+			contentLength: number | undefined;
+		}>
+	>();
 
 	const messages = { rawObjectKeyFor } as unknown as MessagesService;
 	const storage = { getStream } as unknown as ObjectStorageService;
@@ -121,7 +120,9 @@ describe('MessagesController raw download', () => {
 	});
 
 	it('never reaches storage for a message the caller does not own', async () => {
-		rawObjectKeyFor.mockRejectedValue(new NotFoundException('Message not found'));
+		rawObjectKeyFor.mockRejectedValue(
+			new NotFoundException('Message not found'),
+		);
 
 		const { res } = fakeResponse();
 
@@ -136,7 +137,7 @@ describe('MessagesController raw download', () => {
 	it('drops the connection when the stream fails after the headers are out', async () => {
 		getStream.mockResolvedValue({
 			body: Readable.from(
-				(async function* () {
+				(function* () {
 					yield Buffer.from('From: a@example.com\r\n');
 					throw new Error('MinIO went away');
 				})(),
