@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/api/client';
+import { parseFrame, splitFrames } from '@/api/sse';
 
 interface SyncEvent {
 	accountId: string;
@@ -20,26 +21,27 @@ export function useSyncEvents(enabled: boolean): void {
 		let attempt = 0;
 
 		function handleFrame(frame: string): void {
-			// Heartbeats are comments — a line starting with ':' and no data.
-			const data = frame
-				.split('\n')
-				.filter((line) => line.startsWith('data:'))
-				.map((line) => line.slice('data:'.length).trim())
-				.join('\n');
+			const parsed = parseFrame(frame);
 
-			if (!data) {
+			if (!parsed?.data) {
 				return;
 			}
 
-			const event = JSON.parse(data) as SyncEvent;
+			let event: SyncEvent;
 
-			// The worker has finished, so lastSyncedAt and status are both stale.
+			try {
+				event = JSON.parse(parsed.data) as SyncEvent;
+			} catch {
+				// One malformed frame must not take down a stream that will keep
+				// delivering good ones.
+				return;
+			}
+
 			void queryClient.invalidateQueries({ queryKey: ['accounts'] });
-			// The sync just ingested mail into this account, so its message list
-			// is stale too — this is what makes new email appear with no clicking.
 			void queryClient.invalidateQueries({
 				queryKey: ['messages', event.accountId],
 			});
+
 			if (event.outcome === 'failed') {
 				console.warn(`sync failed for account ${event.accountId}`);
 			}
@@ -73,15 +75,11 @@ export function useSyncEvents(enabled: boolean): void {
 
 				buffer += value;
 
-				// Frames are separated by a blank line. A partial frame stays in
-				// the buffer until the rest of it arrives — chunk boundaries have
-				// nothing to do with message boundaries.
-				let boundary = buffer.indexOf('\n\n');
+				const { frames, rest } = splitFrames(buffer);
+				buffer = rest;
 
-				while (boundary !== -1) {
-					handleFrame(buffer.slice(0, boundary));
-					buffer = buffer.slice(boundary + 2);
-					boundary = buffer.indexOf('\n\n');
+				for (const frame of frames) {
+					handleFrame(frame);
 				}
 			}
 		}
