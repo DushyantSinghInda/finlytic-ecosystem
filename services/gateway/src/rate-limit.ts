@@ -37,6 +37,17 @@ const RULES: Rule[] = [
 		pattern: /^\/api\/accounts\/[^/]+\/(preview|sync)$/,
 		max: 10,
 	},
+	// Not throttler's legacy — added because this one is expensive in bytes
+	// rather than CPU. Each response streams a whole RFC 822 message out of
+	// object storage, attachments included, so the default 100/min is up to a
+	// few GB of egress and S3 reads a minute from a single authenticated user.
+	// A person reading their mail does not need more than this.
+	{
+		id: 'message-raw',
+		method: 'GET',
+		pattern: /^\/api\/accounts\/[^/]+\/messages\/[^/]+\/raw$/,
+		max: 20,
+	},
 ];
 
 const DEFAULT_RULE: Rule = { id: 'default', pattern: /.*/, max: 100 };

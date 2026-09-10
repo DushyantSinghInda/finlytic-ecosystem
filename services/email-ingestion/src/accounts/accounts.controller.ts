@@ -6,7 +6,6 @@ import {
 	Param,
 	ParseUUIDPipe,
 	Post,
-	Req,
 	Res,
 	UseGuards,
 } from '@nestjs/common';
@@ -16,7 +15,7 @@ import {
 	type AuthenticatedUser,
 } from '@finlytic/auth-lib';
 import { AccountsService } from './accounts.service.js';
-import type { Request as ExpressRequest, Response } from 'express';
+import type { Response } from 'express';
 import { SyncEventsService } from '../queue/sync-events.service.js';
 
 @Controller('accounts')
@@ -35,7 +34,6 @@ export class AccountsController {
 	@Get('events')
 	async events(
 		@CurrentUser() user: AuthenticatedUser,
-		@Req() req: ExpressRequest,
 		@Res() res: Response,
 	): Promise<void> {
 		// Ownership is decided once, at connect time: the queue event stream is
@@ -66,7 +64,11 @@ export class AccountsController {
 		// two-byte comment every 15s is what keeps a quiet stream open.
 		const heartbeat = setInterval(() => res.write(': ping\n\n'), 15_000);
 
-		req.on('close', () => {
+		// `res`, not `req`. Both fire on a real disconnect under the versions in
+		// use, but the response is the stream actually being written to — it also
+		// closes when the socket dies for reasons the request never sees, and it
+		// is the form the gateway already uses.
+		res.on('close', () => {
 			clearInterval(heartbeat);
 			unsubscribe();
 			res.end();

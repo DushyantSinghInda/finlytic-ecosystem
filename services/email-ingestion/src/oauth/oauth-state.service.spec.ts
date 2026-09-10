@@ -74,4 +74,29 @@ describe('OAuthStateService', () => {
 		jest.setSystemTime(new Date('2026-09-05T10:10:01Z'));
 		expect(() => service.verify(state)).toThrow('OAuth state has expired');
 	});
+
+	it('refuses a state that has already been redeemed', () => {
+		const service = buildService();
+		const state = service.issue('user-1');
+
+		expect(service.verify(state)).toBe('user-1');
+
+		// The signature still checks out — that is the point. A valid signature
+		// proves the state was issued here, never that this is the first time it
+		// has been presented.
+		expect(() => service.verify(state)).toThrow(
+			'OAuth state has already been used',
+		);
+	});
+
+	it('does not let one redeemed state block another', () => {
+		const service = buildService();
+		const first = service.issue('user-1');
+		const second = service.issue('user-1');
+
+		// Same user, same secret, different nonce — two tabs mid-connect must not
+		// invalidate each other.
+		expect(service.verify(first)).toBe('user-1');
+		expect(service.verify(second)).toBe('user-1');
+	});
 });

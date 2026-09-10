@@ -26,6 +26,21 @@ describe('ruleFor', () => {
 		assert.equal(ruleFor('GET', '/api/users/me').id, 'default');
 		assert.equal(ruleFor('GET', '/anything').max, 100);
 	});
+
+	it('gives the raw download its own limit, well below the default', () => {
+		// Expensive in bytes rather than CPU: each response streams a whole
+		// message out of object storage. At the default 100/min a single account
+		// could pull several GB a minute.
+		const raw = ruleFor('GET', '/api/accounts/acc-1/messages/msg-1/raw');
+
+		assert.equal(raw.id, 'message-raw');
+		assert.equal(raw.max, 20);
+	});
+
+	it('leaves the message listing on the default limit', () => {
+		// Cheap and paginated — it should not share the download's budget.
+		assert.equal(ruleFor('GET', '/api/accounts/acc-1/messages').id, 'default');
+	});
 });
 
 describe('createRateLimiter', () => {

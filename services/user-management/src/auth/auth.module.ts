@@ -10,6 +10,7 @@ import { TokenService } from './token.service.js';
 import { RefreshTokenService } from './refresh-token.service.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { PasswordHasher } from './password-hasher.js';
+import { RefreshTokenCleanupService } from './refresh-token-cleanup.service.js';
 
 @Module({
 	imports: [
@@ -41,6 +42,12 @@ import { PasswordHasher } from './password-hasher.js';
 		}),
 	],
 	controllers: [AuthController],
-	providers: [AuthService, TokenService, RefreshTokenService, PasswordHasher],
+	providers: [
+		AuthService,
+		TokenService,
+		RefreshTokenService,
+		PasswordHasher,
+		RefreshTokenCleanupService,
+	],
 })
 export class AuthModule {}

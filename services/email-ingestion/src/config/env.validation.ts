@@ -45,6 +45,12 @@ export const envSchema = z.object({
 
 	REDIS_HOST: z.string().min(1),
 	REDIS_PORT: z.coerce.number().int().positive().default(6379),
+	// Optional: a bare Redis is fine on a laptop, and is not fine on a VPS
+	// where 6379 may be one firewall rule away from the internet.
+	REDIS_PASSWORD: z.preprocess(
+		(v) => (v === '' ? undefined : v),
+		z.string().min(1).optional(),
+	),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -30,6 +30,7 @@ export class SyncEventsService implements OnModuleInit, OnModuleDestroy {
 			connection: {
 				host: this.configService.get<string>('REDIS_HOST'),
 				port: this.configService.get<number>('REDIS_PORT'),
+				password: this.configService.get<string>('REDIS_PASSWORD'),
 			},
 		});
 

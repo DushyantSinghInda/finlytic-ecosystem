@@ -14,11 +14,34 @@ interface StateClaims {
 export class OAuthStateService {
 	private readonly secret: Buffer;
 
+	/**
+	 * Nonces already redeemed, held until they expire anyway.
+	 *
+	 * The signature proves a state was issued here; it does not prove it is
+	 * being presented for the first time. Without this, a state observed in a
+	 * redirect URL stays usable for its full ten minutes.
+	 *
+	 * In-process, like the gateway's rate limiter, and with the same caveat: a
+	 * second instance would not see these. Redis is the fix if this ever runs
+	 * more than once — the callback is already pinned to one host by the
+	 * redirect URI, so it buys nothing today.
+	 */
+	private readonly redeemed = new Map<string, number>();
+
 	constructor(configService: ConfigService) {
 		this.secret = Buffer.from(
 			configService.get<string>('OAUTH_STATE_SECRET')!,
 			'base64',
 		);
+	}
+
+	/** Drops entries whose state could no longer be accepted anyway. */
+	private forget(now: number): void {
+		for (const [nonce, exp] of this.redeemed) {
+			if (exp < now) {
+				this.redeemed.delete(nonce);
+			}
+		}
 	}
 
 	issue(userId: string): string {
@@ -53,9 +76,22 @@ export class OAuthStateService {
 			Buffer.from(payload, 'base64url').toString(),
 		) as StateClaims;
 
-		if (claims.exp < Math.floor(Date.now() / 1000)) {
+		const now = Math.floor(Date.now() / 1000);
+
+		if (claims.exp < now) {
 			throw new UnauthorizedException('OAuth state has expired');
 		}
+
+		this.forget(now);
+
+		// Single use. A replayed state is either a stale back-button or someone
+		// re-presenting a value they should not have; neither should connect a
+		// mailbox to an account.
+		if (this.redeemed.has(claims.nonce)) {
+			throw new UnauthorizedException('OAuth state has already been used');
+		}
+
+		this.redeemed.set(claims.nonce, claims.exp);
 
 		return claims.userId;
 	}
