@@ -1,6 +1,7 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import type { MessageDetail, MessagePage } from '@finlytic/shared-types';
 import { apiJson } from '@/api/client';
+import { downloadMessage } from './download';
 
 export function useMessages(accountId: string | null) {
 	return useInfiniteQuery({
@@ -44,5 +45,21 @@ export function useMessage(accountId: string | null, messageId: string | null) {
 				{ signal },
 			);
 		},
+	});
+}
+
+export function useDownloadMessage() {
+	// A download changes nothing on the server, so there is no cache to
+	// invalidate. useMutation is here purely for isPending and error state —
+	// the same reason a plain async function in a component would need three
+	// useStates.
+	return useMutation({
+		mutationFn: ({
+			accountId,
+			messageId,
+		}: {
+			accountId: string;
+			messageId: string;
+		}) => downloadMessage(accountId, messageId),
 	});
 }

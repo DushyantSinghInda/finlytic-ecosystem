@@ -7,7 +7,8 @@ import {
 	SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useMessage } from './queries';
+import { useDownloadMessage, useMessage } from './queries';
+import { Button } from '@/components/ui/button';
 
 export function MessageSheet({
 	accountId,
@@ -19,12 +20,14 @@ export function MessageSheet({
 	onClose: () => void;
 }) {
 	const message = useMessage(accountId, messageId);
+	const download = useDownloadMessage();
 
 	return (
 		<Sheet
 			open={messageId !== null}
 			onOpenChange={(open) => {
 				if (!open) {
+					download.reset();
 					onClose();
 				}
 			}}
@@ -45,7 +48,7 @@ export function MessageSheet({
 					</div>
 				)}
 
-				{message.isSuccess && (
+				{message.isSuccess && accountId && messageId && (
 					<>
 						<SheetHeader>
 							<SheetTitle className="text-base leading-snug">
@@ -61,7 +64,24 @@ export function MessageSheet({
 						<p className="text-muted-foreground px-4 text-xs">
 							to {message.data.toAddresses.join(', ') || '—'}
 						</p>
+						<div className="px-4">
+							<Button
+								size="sm"
+								variant="outline"
+								disabled={download.isPending}
+								onClick={() =>
+									download.mutate({ accountId, messageId })
+								}
+							>
+								{download.isPending ? 'Preparing…' : 'Download original'}
+							</Button>
 
+							{download.isError && (
+								<p className="text-destructive mt-2 text-xs">
+									{download.error.message}
+								</p>
+							)}
+						</div>
 						<div className="flex-1 overflow-y-auto px-4 pb-6">
 							{message.data.bodyText ? (
 								/* Plain text, never dangerouslySetInnerHTML — this is
