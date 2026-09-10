@@ -18,5 +18,15 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Matches TypeScript's own noUnusedParameters, which already ignores a
+      // leading underscore. Without this the two tools disagree about the same
+      // line, and the only way to satisfy both is to delete a parameter you
+      // need for its type.
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
   },
 ])
