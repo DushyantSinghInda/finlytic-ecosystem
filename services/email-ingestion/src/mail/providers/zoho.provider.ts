@@ -19,6 +19,7 @@ import type {
 	ProviderProfile,
 	RawMessage,
 } from './mail-provider.interface.js';
+import { ProviderAuthRevokedError } from './mail-provider.interface.js';
 
 /**
  * Zoho runs independent data centres and a refresh token issued by one is
@@ -228,6 +229,17 @@ export class ZohoProvider implements MailProviderAdapter {
 			this.logger.error(
 				`Zoho token endpoint (${accountsDomain}) returned ${response.status}: ${payload.error ?? 'no access_token'}`,
 			);
+
+			// Only a grant Zoho says is gone warrants disconnecting the account.
+			// Zoho reports it in the body even on a 200, which is why this reads
+			// payload.error rather than the status.
+			if (
+				payload.error === 'invalid_grant' ||
+				payload.error === 'invalid_code'
+			) {
+				throw new ProviderAuthRevokedError('Zoho', payload.error);
+			}
+
 			throw new BadGatewayException('Could not complete Zoho authorization');
 		}
 

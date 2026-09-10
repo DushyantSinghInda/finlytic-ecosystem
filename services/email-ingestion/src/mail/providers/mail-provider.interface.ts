@@ -4,6 +4,25 @@ import type { MailProvider } from '../../generated/prisma/client.js';
 export type ProviderMetadata = Record<string, string>;
 
 /** Everything an adapter needs to make one authenticated call. */
+/**
+ * The provider has permanently rejected this grant — the user revoked access,
+ * changed their password, or the refresh token expired.
+ *
+ * Distinct from every other provider failure on purpose. A 5xx, a timeout or a
+ * DNS blip is temporary and the job should retry; **this** one cannot be
+ * retried into success and the account genuinely needs reconnecting. Collapsing
+ * the two disables a mailbox permanently because a provider had a bad minute.
+ */
+export class ProviderAuthRevokedError extends Error {
+	constructor(
+		readonly provider: string,
+		readonly detail: string,
+	) {
+		super(`${provider} rejected the refresh token: ${detail}`);
+		this.name = 'ProviderAuthRevokedError';
+	}
+}
+
 export interface ProviderConnection {
 	accessToken: string;
 	providerAccountId: string;

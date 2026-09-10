@@ -18,6 +18,7 @@ import type {
 	ProviderProfile,
 	RawMessage,
 } from './mail-provider.interface.js';
+import { ProviderAuthRevokedError } from './mail-provider.interface.js';
 
 const AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
@@ -126,9 +127,21 @@ export class GmailProvider implements MailProviderAdapter {
 		});
 
 		if (!response.ok) {
+			const detail = await response.text();
+
 			this.logger.error(
-				`Google token endpoint returned ${response.status}: ${await response.text()}`,
+				`Google token endpoint returned ${response.status}: ${detail}`,
 			);
+
+			// OAuth 2.0 reserves invalid_grant for a grant that is genuinely gone:
+			// revoked by the user, expired, or invalidated by a password change.
+			// Retrying it can never succeed. Every other failure here — 5xx, rate
+			// limiting, a network blip — is temporary, and treating it as revoked
+			// would disable the mailbox until the user reconnects by hand.
+			if (detail.includes('invalid_grant')) {
+				throw new ProviderAuthRevokedError('Google', 'invalid_grant');
+			}
+
 			throw new BadGatewayException('Could not complete Google authorization');
 		}
 

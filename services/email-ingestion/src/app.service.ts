@@ -18,7 +18,8 @@ export class AppService {
 
 		const probe = 'encryption-self-test';
 		const roundTripped = this.encryption.decrypt(
-			this.encryption.encrypt(probe),
+			this.encryption.encrypt(probe, 'probe'),
+			'probe',
 		);
 
 		return {

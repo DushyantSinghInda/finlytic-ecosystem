@@ -47,9 +47,12 @@ export class AccountsService {
 				`Consent incomplete — missing ${missing.join(', ')}. Reconnect and approve every permission.`,
 			);
 		}
-		const accessTokenEnc = this.encryption.encrypt(tokens.accessToken);
+		const accessTokenEnc = this.encryption.encrypt(
+			tokens.accessToken,
+			'access',
+		);
 		const refreshTokenEnc = tokens.refreshToken
-			? this.encryption.encrypt(tokens.refreshToken)
+			? this.encryption.encrypt(tokens.refreshToken, 'refresh')
 			: undefined;
 
 		const account = await this.prisma.mailAccount.upsert({
