@@ -6,7 +6,14 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { randomBytes } from 'node:crypto';
 import type { NextFunction, Request, Response } from 'express';
 import { JsonLogger } from './logging/json-logger.js';
+import { installCrashHandlers } from './logging/crash-handlers.js';
 import { runWithRequestId } from './logging/request-context.js';
+
+// Installed before bootstrap, not inside it: startup is the likeliest time to
+// crash, and a rejection from bootstrap() itself would otherwise reach a
+// process with no handler and exit with a raw stack and no structured line.
+const logger = new JsonLogger('user-management');
+installCrashHandlers(logger);
 
 async function bootstrap() {
 	const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -15,7 +22,7 @@ async function bootstrap() {
 		bufferLogs: true,
 	});
 
-	app.useLogger(new JsonLogger('user-management'));
+	app.useLogger(logger);
 
 	// Express level rather than a Nest middleware: it also covers 404s, runs
 	// before guards, and avoids Nest 11's path-to-regexp wildcard syntax.

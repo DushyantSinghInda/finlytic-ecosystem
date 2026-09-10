@@ -1,4 +1,5 @@
 import { request } from 'node:http';
+import { pipeline } from 'node:stream/promises';
 import type {
 	IncomingHttpHeaders,
 	IncomingMessage,
@@ -87,7 +88,11 @@ export function proxy(
 				upstreamRes.statusCode ?? 502,
 				forwardable(upstreamRes.headers),
 			);
-			upstreamRes.pipe(res);
+			// pipeline, not pipe: pipe forwards data but not errors, so an upstream
+			// connection reset mid-body would raise an unhandled 'error' and kill the
+			// gateway. The status line is already out here, so the socket is all
+			// that is left to signal with.
+			void pipeline(upstreamRes, res).catch(() => res.destroy());
 		},
 	);
 
@@ -123,5 +128,5 @@ export function proxy(
 
 	// Streamed rather than buffered: request bodies are never parsed here, and
 	// an upload should not sit in this process's memory.
-	req.pipe(upstreamReq);
+	void pipeline(req, upstreamReq).catch(() => upstreamReq.destroy());
 }

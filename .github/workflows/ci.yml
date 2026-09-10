@@ -53,6 +53,7 @@ jobs:
 
       - name: Unit tests
         run: |
+          npm test -w packages/auth-lib
           npm test -w services/email-ingestion
           npm test -w services/user-management
           npm test -w services/gateway

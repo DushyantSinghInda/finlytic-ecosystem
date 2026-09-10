@@ -40,6 +40,15 @@ export class JsonLogger implements LoggerService {
 				? params[0]
 				: undefined;
 
+		const serialised =
+			message instanceof Error
+				? // message and stack are non-enumerable, so JSON.stringify(error)
+					// is "{}" — the one shape that must never be silently dropped.
+					`${message.name}: ${message.message}`
+				: typeof message === 'string'
+					? message
+					: JSON.stringify(message);
+
 		process.stdout.write(
 			`${JSON.stringify({
 				ts: new Date().toISOString(),
@@ -47,8 +56,8 @@ export class JsonLogger implements LoggerService {
 				service: this.service,
 				requestId: currentRequestId() ?? null,
 				context: context ?? null,
-				msg: typeof message === 'string' ? message : JSON.stringify(message),
-				stack,
+				msg: serialised,
+				stack: stack ?? (message instanceof Error ? message.stack : undefined),
 			})}\n`,
 		);
 	}

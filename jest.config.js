@@ -7,6 +7,7 @@
 // and need Docker plus --experimental-vm-modules.
 module.exports = {
 	projects: [
+		'<rootDir>/packages/auth-lib',
 		'<rootDir>/services/email-ingestion',
 		'<rootDir>/services/user-management',
 	],

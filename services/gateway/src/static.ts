@@ -1,4 +1,5 @@
 import { createReadStream } from 'node:fs';
+import { pipeline } from 'node:stream/promises';
 import { stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import type { ServerResponse } from 'node:http';
@@ -25,7 +26,17 @@ const MIME: Record<string, string> = {
  * then proving the result is still under the root is the whole defence.
  */
 function resolveWithin(root: string, pathname: string): string | null {
-	const decoded = decodeURIComponent(pathname);
+	let decoded: string;
+
+	try {
+		decoded = decodeURIComponent(pathname);
+	} catch {
+		// A malformed percent-sequence is not a path. Returning null is already
+		// how this function says "outside the root" — an unhandled URIError here
+		// takes the whole process down instead.
+		return null;
+	}
+
 	const candidate = resolve(join(root, normalize(decoded)));
 
 	return candidate === root || candidate.startsWith(root + sep)
@@ -38,25 +49,40 @@ async function sendFile(
 	filePath: string,
 	cacheControl: string,
 ): Promise<boolean> {
+	let stats;
+
 	try {
-		const stats = await stat(filePath);
-
-		if (!stats.isFile()) {
-			return false;
-		}
-
-		res.writeHead(200, {
-			'content-type': MIME[extname(filePath)] ?? 'application/octet-stream',
-			'content-length': stats.size,
-			'cache-control': cacheControl,
-		});
-
-		createReadStream(filePath).pipe(res);
-
-		return true;
+		stats = await stat(filePath);
 	} catch {
 		return false;
 	}
+
+	if (!stats.isFile()) {
+		return false;
+	}
+
+	res.writeHead(200, {
+		'content-type': MIME[extname(filePath)] ?? 'application/octet-stream',
+		'content-length': stats.size,
+		'cache-control': cacheControl,
+	});
+
+	try {
+		// Not `.pipe()`: it forwards data but not errors, so a read failing
+		// mid-transfer raises an unhandled 'error' and takes the only ingress
+		// down. The try/catch this replaced could never have caught that — the
+		// failure arrives long after the synchronous call returned.
+		await pipeline(createReadStream(filePath), res);
+	} catch {
+		// The status line left with the first byte, so there is nothing left to
+		// send. Dropping the socket tells the client the file is incomplete.
+		res.destroy();
+	}
+
+	// Answered either way. Returning false here would send the caller on to the
+	// SPA fallback, which would try to write headers onto a response already in
+	// flight.
+	return true;
 }
 
 /**
