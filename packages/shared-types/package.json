@@ -15,12 +15,12 @@
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
-		"eslint": "^10.9.1",
+		"eslint": "^10.10.0",
 		"eslint-config-prettier": "^10.0.1",
 		"eslint-plugin-prettier": "^5.2.2",
 		"globals": "^17.0.0",
 		"prettier": "^3.4.2",
 		"typescript": "^6.0.3",
-		"typescript-eslint": "^8.69.0"
+		"typescript-eslint": "^8.70.0"
 	}
 }
