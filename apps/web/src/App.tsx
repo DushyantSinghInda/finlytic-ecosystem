@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button';
 import { AccountsPanel } from '@/accounts/AccountsPanel';
+import { AppShell } from '@/components/AppShell';
 import { LoginForm } from '@/auth/LoginForm';
 import { useAuth } from './auth/auth-context';
 import { useSyncEvents } from './accounts/useSyncEvents';
@@ -14,7 +14,11 @@ export default function App() {
   useSyncEvents(state.status === 'authenticated');
 
   if (state.status === 'loading') {
-    return <p className="text-muted-foreground p-8">Restoring session…</p>;
+    return (
+      <div className="bg-background text-muted-foreground grid min-h-svh place-items-center text-sm">
+        Restoring session…
+      </div>
+    );
   }
 
   if (state.status === 'anonymous') {
@@ -22,29 +26,43 @@ export default function App() {
   }
 
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-6 p-8">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{state.user.email}</h1>
-          <p className="text-muted-foreground text-sm">
-            {state.user.role} · joined{' '}
-            {new Date(state.user.createdAt).toLocaleDateString()}
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={() => void signOut()}>
-          Sign out
-        </Button>
-      </header>
+    <AppShell
+      email={state.user.email}
+      role={state.user.role}
+      onSignOut={() => void signOut()}
+    >
+      <div className="grid gap-8 lg:grid-cols-[280px_1fr] lg:items-start">
+        {/* Sticky at lg and up: the message list is the thing that scrolls,
+                                  and the mailbox you picked should stay on screen while it does.
+                                  top-20 clears the 56px header plus the content's py-8. */}
+        <aside className="flex flex-col gap-3 lg:sticky lg:top-20">
+          <div>
+            <h2 className="text-sm font-medium tracking-tight">Mailboxes</h2>
+            <p className="text-muted-foreground text-xs">
+              Select one to read its messages.
+            </p>
+          </div>
 
-      <AccountsPanel
-        selectedId={selectedAccountId}
-        onSelect={setSelectedAccountId}
-      />
+          <AccountsPanel
+            selectedId={selectedAccountId}
+            onSelect={setSelectedAccountId}
+          />
+        </aside>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Messages</h2>
-        <MessagesPanel key={selectedAccountId} accountId={selectedAccountId} />
-      </section>
-    </main>
+        <section className="flex min-w-0 flex-col gap-3">
+          <div>
+            <h2 className="text-sm font-medium tracking-tight">Messages</h2>
+            <p className="text-muted-foreground text-xs">
+              Newest first, paginated by cursor.
+            </p>
+          </div>
+
+          <MessagesPanel
+            key={selectedAccountId}
+            accountId={selectedAccountId}
+          />
+        </section>
+      </div>
+    </AppShell>
   );
 }
